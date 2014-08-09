@@ -1,0 +1,240 @@
+<?php
+/**
+ * Implements hook_block_info().
+ */
+function ybzx_block_info() {
+	$blocks = array();
+  //Introduce of this sites on user/* page .when not login.
+  $blocks['video_endian'] = array(
+    'info' => t('video_endian'),
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    // 'pages' => 'node/371',
+  );
+  $blocks['love_group_index'] = array(
+    'info' => t('love_group_index'),
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => 'node/2',
+  );
+  $blocks['love_group_index_bottom'] = array(
+    'info' => 'love_group_index_bottom',
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => 'node/2',
+  );
+  $blocks['love_group_index_bottom_rule'] = array(
+    'info' => 'love_group_index_bottom_rule',
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => 'node/2',
+  );
+  $blocks['love_group_index_bottom_who'] = array(
+    'info' => 'love_group_index_bottom_who',
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' => 'node/2',
+  );
+  $blocks['video_endian_comments'] = array(
+    'info' => t('video_endian_comments'),
+    'cache' => DRUPAL_NO_CACHE, //to be confirmed
+    'region' => 'content',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    // 'pages' => 'node/371',
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function ybzx_block_view($delta = '') {
+	module_load_include('inc', 'love_layout', 'love_layout.block');
+  $block = array();
+  switch ($delta) {
+    case 'love_group_index_bottom':
+      $block['subject'] = NULL;
+      $block['content'] = ' <h3>永不止息の规则:</h3>
+        <p class="index_bottom">只接受熟人间邮箱邀请注册，请为您邀请的肢体祷告，您在熟人之间互相介绍时，应慎重，严谨，并为之代祷。</p> ';
+      break;
+    case 'love_group_index_bottom_rule':
+      $block['subject'] = NULL;
+      $block['content'] = '
+        <h3>源于2013.11.11:</h3>
+        <p class="index_bottom">@bluesky_still透过对当前教会单身肢体需求的看见，业余时间开发的针对主内肢体婚恋社交网站，通过简洁的关系建立渠道，熟人的推荐，舆论监督与指导，为肢体提供一个便捷互相了解、信实互动的社交平台。</p>';
+      break;
+    case 'love_group_index_bottom_who':
+      $block['subject'] = NULL;
+      $block['content'] = '<div class="bottom-copyright">
+          <ul>
+            <li>'.l('关于我们','about').'</li> ┊ 
+            <li>'.l('联系我们','about').'</li> ┊ 
+            <li>'.l('常见问题','questions').'</li> ┊ 
+            <li>'.l('意见反馈','node/485').'</li>
+          </ul>
+          <p>Copyright © 2013 - 2014 永不止息 版权所有 </p>
+        </div>';
+      break;
+    case 'love_group_index':
+      global $user;
+      if(!$user->uid){
+        $button = '<button type="button" class="btn btn-success btn-lg download-btn" data-toggle="modal" data-target="#click-down">
+    <span class="glyphicon glyphicon-user"></span> '.l('注册申请','qa/register').'
+  </button>';
+      }else{
+         $button = '<button type="button" class="btn btn-success btn-lg download-btn" data-toggle="modal" data-target="#click-down">
+    <span class="glyphicon glyphicon-edit"></span> '.l('完善资料','user/register').'
+  </button>';
+      }
+
+      if(og_is_member('node', 2)){
+        $button = '
+  <button type="button" class="btn btn-success btn-lg download-btn" data-toggle="modal" data-target="#click-down">
+    <span class="glyphicon glyphicon-ok"></span> '.l('审核通过','photos').'
+  </button>';
+      }
+      $block['subject'] = NULL;
+      $block['content'] = '<div class="intro-left pull-left">
+  <h2>幸福家庭</h2>
+  <h3>从婚恋迈出第一步</h3>
+  <h3>响应呼召，组建家庭 让爱永不止息！</h3>'.$button.'
+
+  <div class="version"> <h3>永不止息の异象:</h3>
+  <p>爱是互相激励、共同成长，并且需要公众见证、公开交往，接受监督的，让更多的肢体在婚恋交友，及组建家庭上彰显神的荣耀。</p></div>
+</div> ';
+      break;
+  	case 'video_endian':
+  		$html = file_get_html('http://v.tudou.com/_114352882/');
+			  //get title $('[code]').attr('code')
+			// $Title = trim($html->find('[code]', 0)->plaintext);
+			// $Title = str_replace('查看','',$Title);
+			// $Url =' http://www.tudou.com/programs/view/'.$html->find('[code]', 0)->attr['code'];
+			$play_code = $html->find('[code]', 0)->attr['code'];
+      $block['subject'] = NULL;//t('User info')
+      $block['content'] = '<embed src="http://www.tudou.com/v/'.$play_code.'/&autoPlay=false/v.swf" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" wmode="opaque" width="480" height="400"></embed>';
+  		break;
+  	case 'video_endian_comments':
+			$html = file_get_html('http://v.tudou.com/_114352882/');
+			  //get title $('[code]').attr('code')
+			$Title = trim($html->find('[code]', 0)->plaintext);
+			$Title = str_replace('查看','',$Title);
+			// $Url =' http://www.tudou.com/programs/view/'.$html->find('[code]', 0)->attr['code'];
+			drupal_set_title($Title);
+			$play_code = $html->find('[code]', 0)->attr['code'];
+      $block['subject'] = NULL;//t('User info')
+      $block['content'] = '<div style="overflow: hidden; margin: 15px auto; max-width: 671px;">
+      <iframe scrolling="no" src="http://www.tudou.com/programs/view/'.$play_code.'" style="border: 0px none; margin-left: 0px; height: 2354px; margin-top: -853px; width: 926px;">
+      </iframe>
+      </div>';
+  		break;
+  	
+  	default:
+  		# code...
+  		break;
+  }
+  return $block;
+}
+
+// This function adds a '+' next to each datebox with a link to the event node creation page,
+// if the current user has permission to create events.
+// Replace 'mymodule' with the name of your module.
+// Replace 'event' with the name of your CCK content type.
+function ybzx_preprocess_calendar_datebox(&$vars) {
+  global $user;
+  $content_types = array('grace365','in_him');
+  $types = node_type_get_types();
+  foreach ($content_types as $key => $content_type) {
+    $last_node = _ybzx_get_last_node($content_type);
+    $now = date('d',time());
+    if(isset($last_node)) {
+      $last = date('d',$last_node->created);
+    }else{
+      $last = $now -1;
+    }
+    if($vars['day'] == $now && $now - $last >= 1) {
+      if (user_access('create '.$content_type.' content', $user)) {
+          $vars['add_content_links'][] = l('+'.$types[$content_type]->name, 'node/add/'.str_replace('_', '-', $content_type));        
+        }
+    }  
+  }
+  
+}
+
+function  _ybzx_get_last_node($content_type = 'article') {// get latest node.
+  $query = "SELECT n.nid nid, n.created created FROM {node} n  WHERE n.type = :type order by n.created desc limit 0,1";
+  return db_query($query, array(':type' => $content_type))->fetch();
+}
+
+
+function ybzx_get_default_image_field_value($bundle = 'grace365', $field_name = 'field_image', $type = 'default_image', $entity_type = 'node') {
+  $query = db_select('field_config_instance', 'fc');
+  $query->fields('fc', array('id'));
+  $query->condition('field_name', $field_name,'=');
+  $query->condition('bundle', $bundle,'=');
+  $query->condition('entity_type', $entity_type,'=');
+  $id = $query->execute()->fetchField();
+
+  $query = db_select('file_usage', 'fu');
+  $query->fields('fu', array('fid'));
+  $query->condition('type', $type,'=');
+  $query->condition('id', $id,'=');
+  $fid = $query->execute()->fetchField();
+  $img = file_load($fid);
+  
+  $img = $img->uri;
+  $img = file_create_url($img);
+  return $img;
+}
+
+
+
+/**
+* $type = news nodes
+**/
+
+function ybzx_get_nodes($content_type = 'article', $counts = 1, $type = 'news') {
+  
+  $query = db_select('node', 'n');
+  $query->fields('n', array('nid'));
+  $query->condition('n.status', 1,'=');
+  $query->condition('n.type', $content_type,'=');
+  $query->orderBy('n.created', 'DESC');
+  $query->range(0, $counts);
+  $results = $query->execute()->fetchAll();
+
+  $default_image = ybzx_get_default_image_field_value($content_type, $field_name = 'field_image', $content_type = 'default_image', $entity_type = 'node');
+  $second_image = 'http://wx.dev.camplus.hk/sites/default/files/pictures/picture-172-1356487827.jpg';
+  
+  $nodes = array();
+  $news = array();
+  if(count($results))
+    foreach ($results as $key => $value) {
+      $node = node_load($value->nid);
+      $nodes[] = $node;
+      
+      $des = check_markup($node->body[LANGUAGE_NONE][0]['value']);//decode_entities()
+      // $des = strip_tags($des);
+      // $des = str_replace('&nbsp;&nbsp;',"\n",$des);
+      // $des = str_replace('&nbsp;',' ',$des);
+      // $des = truncate_utf8($des, 300, $wordsafe = FALSE, $add_ellipsis = TRUE, $min_wordsafe_length = 1);
+
+      if($node->field_image) {
+        $default_uri = $node->field_image[LANGUAGE_NONE][0]['uri'];
+        $default_image = file_create_url($default_uri);
+      }
+      $img = array(
+          'Title'=> $node->title,
+          'Description'=>$des,
+          'PicUrl'=>$default_image,
+          'Url'=> url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/'.$node->nid,
+        );
+      $news[] = $img;
+      // return $news;
+    }
+    return $$type;
+}

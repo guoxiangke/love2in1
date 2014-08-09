@@ -1,0 +1,41 @@
+/**
+ * Grid container
+ */
+.views-photos-image {
+list-style-type: none;
+position: relative; /** Needed to ensure items are laid out relative to this container **/
+margin: 0 5px;
+padding: 0;
+}
+
+/**
+ * Grid items
+ */
+.views-photos-image li {
+width: 210px;
+background-color: #ffffff;
+border: 1px solid #dedede;
+-moz-border-radius: 2px;
+-webkit-border-radius: 2px;
+border-radius: 2px;
+display: none; /** Hide items initially to avoid a flicker effect **/
+  cursor: pointer;
+padding: 4px;
+-moz-box-sizing:border-box;
+box-sizing:border-box;
+}
+
+.views-photos-image li img {
+display: block;
+width: 100%;
+height: auto;
+}
+
+/**
+ * Grid item text
+ */
+.views-photos-image li p {
+color: #666;
+font-size: 12px;
+margin: 7px 0 0 7px;
+}

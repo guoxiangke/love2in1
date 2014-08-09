@@ -1,0 +1,193 @@
+/*@import url(http://fonts.googleapis.com/css?family=Cambo);*/
+.qa-list-l {
+    display: inline;
+}
+
+/*.meta-answers {
+background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/answers.png) no-repeat left center transparent;
+padding-top: 0;
+}
+.meta-votes {
+background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/votes.png) no-repeat left center transparent;
+}
+.meta-views {
+background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/views.png) no-repeat left center transparent;
+}*/
+.meta-answers, .meta-votes, .meta-views { 
+	padding: 5px 0 5px 15px; 
+	font-size: 116%;
+	cursor: default;
+	border-bottom: 1px dashed #333333;
+	line-height: 25px !important;
+}
+/*only small*/
+@media only screen and (max-width: 768px) {
+	.meta-answers, .meta-votes, .meta-views {
+		float: left;
+		padding-top: 0;
+		font-size: 100%;
+		margin-right: 20px;
+		margin-bottom: 10px;
+		background-position: left top;
+		line-height: 1;
+	}
+}
+.qa-list-title {
+    font-size: 1.2em;
+    color: #999999;
+    font-weight: bold;
+    line-height: 33px;
+}
+.qa-list-body-summary {
+    line-height: 25px !important;
+    margin: 0 0 20px 0;
+    text-indent: 2em;
+}
+.qa-list-time span, .qa-list-region{
+    font-weight: bold;
+}
+.qa-list-time {
+    font-size: 90%;
+    line-height: 1.4;
+    margin: 6px 0;
+    /*background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/time.png) no-repeat left top transparent;*/
+
+}
+.status-closed {
+    background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/status_closed.png) no-repeat left top transparent;
+}
+.status-open {
+    background: url(http://qanda.wpshow.me/wp-content/themes/qanda/images/icons_article/status_open.png) no-repeat left top transparent;
+}
+.entry-status {
+	width: 31px;
+	height: 31px;
+}
+.qa-list-author-img {
+	float: left;
+}
+
+.sbq-qa-flag {
+	margin-left: 5px;
+}
+
+.view-questions .views-row {
+	overflow: hidden;
+	margin-bottom: 60px;
+}
+.qa-list-l {	
+	color: #538dc2;	
+  font-size: 1.5em;
+}
+.love-qa-list  a{
+	text-decoration:none;
+}
+.qa-list-l .counts ,.qa-list-l .rate-widget {
+	/*background: #dfeaf4;*/
+	color: #538dc2;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	padding: 1px 8px;
+	font-family: 'Georgia', serif,"Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.qa-list-l .rate-button {
+	display: none;
+}
+.qa-list-author-img img{
+	width: 75px;
+	height: 75px;
+}
+
+.qa-list-l .rate-info {
+	display: none;
+}
+
+#answer-node-form .filter-wrapper,.comment-form .filter-wrapper{
+	display: none;
+}
+.q-feedback a{
+	color: #FFF;
+}
+.q-feedback .glyphicon-comment{
+	margin-right: 5px;
+}
+
+
+.page-question h1.page-header{
+	display: none;
+}
+.qa-list-title h2{
+	font-size: 1em;
+	color: #000;
+	font-weight: bold;
+}
+
+.sbq-qa-flag_wrap {
+	display: inline;
+}
+
+.sbq-qa-flag {
+	background-color: #428bca;
+}
+.sbq-qa-flag a{
+	color: #FFF;
+}
+.qa-list-tags .glyphicon-tags, .love-qa-list .glyphicon-time{
+	color: #2a6496;
+}
+.love-qa-list .glyphicon-time{
+ 	font-size: 100%;
+ }
+
+.comments_question, .comments_answer {
+	padding: 15px;
+}
+
+.ajax-comment-wrapper {
+	padding-top: 5px;
+	border-top: 2px dotted #3A87AD;
+}
+
+.view-display-id-answers_attachment {
+	border-top: 3px solid #3A87AD;
+}
+.qa-list-title h2:before {
+	content: 'Q：';
+}
+
+.page-questions .page-header,.page-questions .breadcrumb{
+	display: none;
+}
+/*.qa-list-title-closed {
+	background: #009a61;
+}
+.qa-list-title-closed a{
+	color: #FFF;
+}*/
+.qa-list-title a:before {	
+	content: '※';
+}
+
+.page-question h2{
+	/*color: #FFF;*/
+	font-size: 18px;
+	/*padding: 5px;*/
+}
+/*.page-question .qa-list-title-closed h2{
+	background: #009a61;
+}
+.page-question .qa-list-title-open h2{
+	background: #9a4444;
+}*/
+
+.qa-list-title-open h2:before {
+	content: 'Q：';
+}
+.qa-list-title-closed h2:before,.qa-list-title-closed a:before {
+	content: '√';
+}
+.qa-list-title-closed h2:after,.qa-list-title-closed a:after{
+	content: '【已解决】';
+}

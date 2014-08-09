@@ -1,0 +1,279 @@
+<?php
+//FromUserName: oNAD2jp8gQsG0woB6K6Aua2oZzxA
+//give the 
+//bingEmail: + bindUsername = the bindUid
+// if no this FromUserName, the first time visit this site. 回复菜单。
+// 欢迎您关注[永不止息],
+//uid 0/1 FromUserName 
+/**
+ * Implements hook_schema().
+ */
+function mp_service_schema() {
+  $schema['mp_service'] = array(
+    'description' => '',
+    'fields' => array(
+			'uid' => array(
+				'description' => '',
+				'type' => 'int',
+				'unsigned' => TRUE,
+				'not null' => TRUE,
+				'default' => 0
+			),
+      'fromusername' => array(
+        'description' => 'fromusername',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => ''
+       ),
+      'created' => array(
+        'description' => 'The Unix timestamp.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'last_cmd' => array(
+        'description' => 'last_cmd',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      ),      
+      'last_cmd_timestamp' => array(
+        'description' => 'The Unix timestamp.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),      
+      'fakeid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ), 
+      'groupid' => array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'nickname' => array(
+        'description' => 'nickname',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+       ),
+      'wxid' => array(//wx_username
+        'description' => 'wxid',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+       ),        
+      'unsubscribe' => array(
+        'description' => 'Boolean indicating whether or not user unsubscribe',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'picture' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "Foreign key: {file_managed}.fid of user's picture.",
+      ),
+      'wxnickname' => array(
+        'description' => 'wxnickname',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+       ),
+      'contact_info' => array(
+        'description' => 'contact_info',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+       ),
+      //update 20140305
+      'mpid' => array(//mpid
+        'description' => 'mpid',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+       ), 
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+      ),
+    'primary key' => array('fromusername'),
+  );
+  $schema['cache_mp_service'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}
+/**
+ * Implements hook_uninstall().
+ */
+function mp_service_uninstall() {
+	db_query("DELETE FROM {variable} WHERE name LIKE 'mp_service_%%'");
+}
+
+function mp_service_update_7100() {
+  // Check because D6 installs may already have added this.
+  if (!db_field_exists('mp_service', 'mp_service')) {
+    $new_field = array(
+      'description' => 'last_cmd',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => ''
+    );
+    db_add_field('mp_service', 'last_cmd', $new_field);
+    $new_field = array(
+      'description' => 'The Unix timestamp.',
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+    db_add_field('mp_service', 'last_cmd_timestamp', $new_field);
+  }
+}
+function mp_service_update_7101() {
+  // Check because D6 installs may already have added this.
+  if (!db_field_exists('mp_service', 'mp_service')) {
+    $new_field = array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      );
+    db_add_field('mp_service', 'fakeid', $new_field);
+    $new_field = array(
+        'description' => '',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      );
+    db_add_field('mp_service', 'groupid', $new_field);
+  }
+}
+function mp_service_update_7102() {
+  // Check because D6 installs may already have added this.
+  if (!db_field_exists('mp_service', 'mp_service')) {
+    $new_field = array(
+        'description' => 'nickname',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      );
+    db_add_field('mp_service', 'nickname', $new_field);
+  }
+}
+
+function mp_service_update_7103() {
+  if (!db_field_exists('mp_service', 'unsubscribe')) {
+    $new_field = array(
+        'description' => 'Boolean indicating whether or not user unsubscribe',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      );
+    db_add_field('mp_service', 'unsubscribe', $new_field);
+  }
+}
+/**
+ * add user pic & wxid for wechat user
+ */
+function mp_service_update_7104() {
+  if (!db_field_exists('mp_service', 'wxid')) {
+    $new_field = array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "Foreign key: {file_managed}.fid of user's picture.",
+      );
+    db_add_field('mp_service', 'picture', $new_field);
+    $new_field = array(
+        'description' => 'wxid',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => ''
+      );
+    db_add_field('mp_service', 'wxid', $new_field);
+  }
+}
+/**
+ * add user wxnickname for wechat user
+ */
+function mp_service_update_7105() {
+  if (!db_field_exists('mp_service', 'wxnickname')) {
+    $new_field = array(
+        'description' => 'wxnickname',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => ''
+      );
+    db_add_field('mp_service', 'wxnickname', $new_field);
+  }
+}
+/**
+ * add user wxnickname for wechat user
+ */
+function mp_service_update_7106() {
+  if (!db_field_exists('mp_service', 'contact_info')) {
+    $new_field = array(
+        'description' => 'contact_info',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => ''
+      );
+    db_add_field('mp_service', 'contact_info', $new_field);
+  }
+}
+
+/**
+ * add user wxnickname for wechat user
+ */
+function mp_service_update_7107() {
+  if (!db_field_exists('mp_service', 'mp_service')) {
+    // $new_field = array(
+    //     'description' => 'contact_info',
+    //     'type' => 'blob',
+    //     'size' => 'big',
+    //     'not null' => FALSE,
+    //     'serialize' => TRUE
+    //     'default' => ''
+    //   );
+    db_change_field('mp_service', 'contact_info', 'contact_info',
+  array('type' => 'blob', 'not null' => FALSE,'size' => 'big','serialize' => TRUE));
+
+  }
+}     
+
+
+/**
+ * add mpid for wechat user
+ */
+function mp_service_update_7108() {
+  if (!db_field_exists('mp_service', 'mp_uid')) {
+    $new_field = array(
+        'description' => 'mp_uid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      );
+    db_add_field('mp_service', 'mp_uid', $new_field);
+  }
+}

@@ -1,0 +1,514 @@
+<?php
+//module_invoke_all('wechat_message', $weObj);
+function love2in1_wechat_message($weObj){
+  $mp_services_config['account'] = 'love2in1@163.com';
+  $mp_services_config['password'] = 'zhuaiheyi2009';
+  $service_uid = '635';
+	if(!is_array($weObj->Message(''))){ // add default option
+    $type = $weObj->getRev()->getRevType();
+    $FromUserName =  $weObj->getRev()->getRevFrom();
+    $mp_member = love2in1_get_mp_member($FromUserName,$service_uid);
+
+    if(!$mp_member) {
+      mp_service_add_user($FromUserName,$last_cmd='old_user',$service_uid);
+    }
+    switch($type) {
+     case Wechat::MSGTYPE_TEXT:
+          $keyword =  trim($weObj->getRevContent());
+          // watchdog('FromUserName-keyword', $FromUserName.' - '.$keyword, array(), WATCHDOG_NOTICE, 'link');
+           // $wechat_user_info = getUserInfo();
+
+          // watchdog('wechat_user_info222record', '<pre>'.print_r($mp_member,true), array(), WATCHDOG_NOTICE, 'link');
+          $wechat_user_info = mp_service_update_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid );
+
+          // watchdog('wechat_user_info', '<pre>'.print_r($wechat_user_info,true), array(), WATCHDOG_NOTICE, 'link');
+          $check_keyword = truncate_utf8($keyword, 2, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1);
+          if ($check_keyword == '建议' || $check_keyword == '意见') {
+            mp_service_update_cmd($check_keyword,$FromUserName,$service_uid);
+            $wechat_user_info = mp_service_get_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid);
+            wx_comment('1243',$keyword,$wechat_user_info);
+            $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]谢谢反馈！";
+            $weObj->text($contentStr)->reply();
+          }
+          if($keyword == 'qx' || $keyword == '否') {
+              mp_service_update_cmd('qx',$FromUserName,$service_uid);
+              $weObj->text("指令已取消！\n回复建议+内容，提出意见！")->reply();
+          }
+          //begin
+          if (filter_var($keyword, FILTER_VALIDATE_EMAIL)) {
+              // e-mail address
+              mp_service_update_cmd('email:'.$keyword,$FromUserName,$service_uid);
+              $weObj->text("第一步成功！第二步，请输入您在主爱合一网站的登陆密码进行最终绑定！")->reply();
+          }
+          if(!$mp_member['uid']){//绑定...
+            if(!(strpos($mp_member['last_cmd'], 'email') === false)){//was found
+              //接收密码，回复【qx】取消绑定
+              $email = strstr($mp_member['last_cmd'], ':');
+              $email =  str_replace(':', '', $email);
+              $password = $keyword;
+              $bind = love2in1_bind($FromUserName,$email,$password,$service_uid);
+              if($bind){
+                //sucess
+                $weObj->text("nickname 弟兄，恭喜您绑定成功！现在点击”查看私信“，看看谁给您写过信吧～不过要有平常心哦～因为神早已预备！")->reply();
+                //
+              }else{
+                //error password or email!!!
+                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n密码或邮箱不对！")->reply();
+              }
+            }
+          }else{
+            // login user
+            if(!(strpos($mp_member['last_cmd'], 'readmsg') === false)){
+                $readmsg = strstr($mp_member['last_cmd'], ':');
+                $msg_id =  str_replace(':', '', $readmsg);
+                $new_message = $keyword;
+                mp_service_update_cmd('msg_reply:'.$msg_id.':'.$keyword,$FromUserName,$service_uid);
+                $weObj->text("是否将您发送的私信内容回复给\n回复“是”发送私信\n回复“否”取消发送")->reply();
+            }
+            if(!(strpos($mp_member['last_cmd'], 'msg_reply') === false) && $keyword == '是'){
+                
+                $last_cmd = explode(':', $mp_member['last_cmd']);
+                $msg_id =  $last_cmd[1];
+                $msg =  $last_cmd[2];
+                // $new_message = $keyword;
+                 $old_message = love2in1_get_message_by_id($msg_id);
+                 $fields = array(
+                    'title' =>'Re:'.$old_message['title'],
+                    'content' =>$msg,
+                    'sendfrom' =>$old_message['sendto'],
+                    'sendto' =>$old_message['sendfrom'],
+                    'status' =>'send',
+                    'sendtime' =>time(),
+                    );
+                $new_msg_id = love2in1_new_message($fields);
+                if($new_msg_id){
+                  $weObj->text("您的私信已经成功发送给了".$old_message['sendfrom']."\n点击“查看私信”，查看其他人给您的私信\n回复“建议 +内容”，您可以给我们提建议哦！")->reply();
+                  mp_service_update_cmd('qx',$FromUserName,$service_uid);
+                }else{
+                   $weObj->text("发送失败！\n回复建议+内容，提出意见！")->reply();
+                }
+            }
+
+          }
+          //end 
+          
+          if (is_numeric($keyword) && $keyword>10000 && love2in1_isbind($FromUserName,$service_uid)) {
+              $msg_id = $keyword;
+              $msg = love2in1_get_message_by_id($msg_id);
+              if ($msg['sendto'] != $mp_member['nickname']) {
+                 $weObj->text("笑而不语^_^\n回复建议+内容，提出意见！")->reply();
+              }
+              mp_service_update_cmd('readmsg:'.$msg_id,$FromUserName,$service_uid);
+              $img = array(
+                  'Title'=> "▼ ".$msg['sendfrom']."▼不想发送请回复qx\n 注意，您下次回复的内容即可给ta，",
+                  'Description'=>'',
+                  'PicUrl'=>'',
+                  'Url'=>''
+                );
+              $news[] = $img;
+              $img = array(
+                  'Title'=> $msg['content'] ,
+                  'Description'=>'',
+                  'PicUrl'=>'',
+                  'Url'=>''
+                );
+              $news[] = $img;
+              $weObj->news($news)->reply(); 
+          }
+          exit;
+        break;
+  	  case Wechat::MSGTYPE_EVENT:
+  	    $event = $weObj->getRevEvent();
+        if(!$event){
+          break;
+        }else if($event['event']=='subscribe'){
+  	      $weObj->text(variable_get("wechat_follow_message", variable_get("wechat_default_message", 'Hi, WeChat!')));
+  	    }
+        else if($event['event']=='CLICK') {          
+          if($event['key'] == 'GET_SONG'){
+            // $news = ybzx_get_nodes($type = 'article', $counts = 1);
+            // $weObj->news($news)->reply(); exit;
+            $nodes = ybzx_get_nodes($content_type = 'article', $counts = 1, $type = 'nodes');
+            $title = $nodes[0]->title;
+            if(isset($nodes[0]->field_wechat_url[LANGUAGE_NONE][0]['value'])) {
+              $musicurl = $nodes[0]->field_wechat_url[LANGUAGE_NONE][0]['value'];
+            }else{
+              $uri = $nodes[0]->field_mp3[LANGUAGE_NONE][0]['uri'];
+              $musicurl = file_create_url($uri);
+            }             
+            //http://audio.liangyou.net/download.php?t=1&c=vmf&f=vmf131101.mp3
+            $desc = "主爱合一,永不止息！love2in1 合一互动";
+            $hgmusicurl = $musicurl;
+            $weObj->music($title, $desc, $musicurl, $hgmusicurl)->reply();
+            exit;            
+          }
+          if($event['key'] == 'GET_MSG'){
+
+            if(!love2in1_isbind($FromUserName,$service_uid)){
+              //您还没绑定，请回复【email】请回复密码！
+              $weObj->text("咦，您还没有绑定主爱合一网的注册帐号，不要急，再来一次～\n请输入您在主爱合一网站的注册邮箱进行帐号绑定。")->reply();
+              return;
+            }
+
+
+            // $unread_count = love2in1_get_unreader_messages_count($mp_member['nickname']);
+            $img = array(
+                'Title'=> '▼回复私信编号查看私信内容',//，您有('.$unread_count.')条未读私信▼
+                'Description'=>'',
+                'PicUrl'=>'',//http://www.yongbuzhixi.com/sites/all/themes/love/family_1.png
+                'Url'=>'http://www.3dedu.net/my_mailbox_inbox.php'
+              );
+            $news[] = $img;
+            $messages = love2in1_get_messages($mp_member['nickname'],10);
+            $messages_return = ''; 
+            foreach ($messages as $key => $msgObj) {
+              $messages_return .= ''.$msgObj->id.'▌['.$msgObj->sendfrom.'] '.date("n月j日",$msgObj->sendtime).'来信'.(!($msgObj->ifread)?'*new':'')."\n" ;
+            }
+            mp_service_update_cmd('GET_MSG',$FromUserName,$service_uid);
+
+            $img = array(
+                'Title'=> $messages_return,
+                //▌◤▲▼
+                'PicUrl'=>'',
+                'Url'=>''
+              );
+            $news[] = $img;
+
+            //admin messages begin
+            $admin_messages = love2in1_get_admin_messages($mp_member,$rang = 4);
+            //admin messages end
+            foreach ($admin_messages as $key => $msgObj) {
+              if(love2in1_admin_message_isread($msgObj->id,$mp_member['uid'])) continue;
+              $content = '['.$msgObj->title.']-管理员 '.date("n月j日",$msgObj->sendtime).'来信:'."\n".$msgObj->content;//.
+              
+              $img = array(
+                  'Title'=> $content,
+                  'PicUrl'=>'',
+                  'Url'=>'http://www.3dedu.net/my_mailbox_read_letter_manage.php?id='.$msgObj->id,
+                );
+              $news[] = $img;
+            }
+            // $img = array(
+            //   'Title'=>'用手机，登录【永不止息】^_^',
+            //   'Description'=>'单图文 标题15字 摘要60字',
+            //   'PicUrl'=>'http://www.yongbuzhixi.com/sites/default/files/pictures/picture-172-1356487827.jpg',
+            //   'Url'=>'http://yongbuzhixi.com'
+            // );
+            //单图文 标题15字 摘要60字
+            //多图文 1标题16字 2标题15字
+            $weObj->news($news)->reply();
+
+            exit;            
+          }
+          // $message = _wechat_menu_default_message($event);
+          // $message && $weObj->text($message);
+        }
+  		  break;
+    }
+  }
+  if(!is_array($weObj->Message(''))){
+    // $weObj->text(variable_get("wechat_default_message", "Hi, WeChat!"));
+  }
+  // $weObj->reply();
+  exit;
+}
+
+function love2in1_get_unreader_messages_count($nickname){
+      $newmail_count = 0;
+      $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
+        ->fields('p')
+        ->condition('sendto',$nickname)
+        ->condition('ifread',0)
+        ->condition('status','send')
+        ->condition('to_del','1','!=')
+        ->execute();//'xiangkeguo@gmail.com'
+      $newmail_count = $result->rowCount();
+      return $newmail_count;
+}
+/**
+ * array(0=>obj)
+ */
+function love2in1_get_messages($nickname,$rang = 9){
+      $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
+        ->fields('p')
+        ->condition('sendto',$nickname)
+       // ->condition('ifread',0) unreader
+        ->condition('status','send')
+        ->condition('to_del','1','!=')
+        // ->condition('from_del','1','!=')
+        ->orderBy('id', 'DESC')//ORDER BY created
+        ->range(0,$rang)
+        ->execute() 
+        ->fetchAll();
+      return $result;
+}
+function love2in1_get_admin_messages($mp_member,$rang = 3){
+      
+      $member = love2in1_get_memeber_by_id($mp_member['uid']);
+      
+      $result = Database::getConnection('default', 'love2in1')->select('mail_admin', 'p')
+        ->fields('p')
+        ->where("(sex = '".$member['sex']."' or sex = '') 
+          and ( 
+                (province = '".$member['province']."'
+                  and city = '".$member['city']."'
+                ) 
+                or (province = '".$member['province']."' and city = 0) 
+                or (province = 0 and city = 0) 
+              ) 
+          and (member_id = 11833 or member_id = 0 ) 
+          and (sendtime >'".$member['regtime']."')"
+        ) 
+        ->orderBy('id', 'DESC')//ORDER BY created
+        ->range(0,$rang)
+        ->execute() 
+        ->fetchAll();
+      return $result;
+}
+
+function love2in1_admin_message_isread($id,$member_id){
+  $result = Database::getConnection('default', 'love2in1')->select('mail_admin_read', 'p')
+    ->fields('p')
+    ->condition('mail_id',$id)
+    ->condition('member_id',$member_id)
+    ->execute() 
+    ->fetchAll();
+  return count($result);
+}
+function love2in1_get_message_by_id($id){
+  $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
+    ->fields('p')
+    ->condition('id',$id)
+    ->execute()
+    ->fetchAssoc();
+  if($result['ifread'] == 0){
+    Database::getConnection('default', 'love2in1')
+      ->update('mail')//https://api.drupal.org/api/drupal/includes!database!database.inc/function/db_update/7
+      ->fields(array('ifread' => '1',))
+      ->condition('id',$id)
+      ->execute();
+  }
+  return $result;
+}
+
+function love2in1_new_message($fields){
+  //   $db->table = $tbl_mail;
+  // $db->columns = "title, content, sendfrom, sendto, status, sendtime";
+  // $db->data = "$title+&&+$content+&&+{$_SESSION['ssec_nickname']}+&&+$sendto+&&+$status+&&+".time();
+  // $db->delimiter = '+&&+';
+  // $db->mysql_add();
+
+  // $fields = array(
+  //   'title' =>,
+  //   'content' =>,
+  //   'sendfrom' =>,
+  //   'sendto' =>,
+  //   'status' =>,
+  //   'sendtime' =>time(),
+  //   );
+  $result = Database::getConnection('default', 'love2in1')->insert('mail')
+    ->fields($fields)
+    ->execute();   
+    return $result ;
+}
+/**
+ * id (String, 5 characters ) 11833
+    email (String, 20 characters ) xiangkeguo@gmail.com
+    pwd (String, 8 characters ) bWprNW5q
+    nickname (String, 12 characters ) 天空蔚蓝
+    sex (String, 1 characters ) m
+    marriage (String, 1 characters ) 1
+    province (String, 2 characters ) 11
+    city (String, 4 characters ) 1105
+    birth_year (String, 4 characters ) 1987
+    birth_month (String, 2 characters ) 12
+    birth_day (String, 4 characters ) 1211
+    height (String, 3 characters ) 172
+    degree (String, 1 characters ) 3
+    income (String, 1 characters ) 3
+    note (String, 102 characters ) 爱是永不止息，爱是不求自己的益��...
+    note_ifpass (String, 1 characters ) 1
+    note_modify_time (String, 10 characters ) 1368445937
+    faith (String, 1 characters ) 1
+    regtime (String, 10 characters ) 1346110589
+    needage_min (String, 2 characters ) 22
+    needage_max (String, 2 characters ) 26
+    needheight_min (String, 1 characters ) 1
+    needheight_max (String, 1 characters ) 6
+    needmarriage (String, 1 characters ) 1
+    needdegree (String, 1 characters ) 1
+    needdegree_up (String, 0 characters )
+    needphoto (String, 1 characters ) 1
+    needcert (String, 1 characters ) 1
+    needfaith (String, 1 characters ) 0
+    love1_location (String, 2 characters ) 11
+    love1_sublocation (String, 4 characters ) 1100
+    love2_location (String, 2 characters ) 41
+    love2_sublocation (String, 4 characters ) 4117
+    love3_location (String, 1 characters ) 0
+    love3_sublocation (String, 1 characters ) 0
+    love4_location (String, 1 characters ) 0
+    love4_sublocation (String, 1 characters ) 0
+    love5_location (String, 1 characters ) 0
+    love5_sublocation (String, 1 characters ) 0
+    ifuseneed (String, 1 characters ) 0
+    useneed (String, 0 characters )
+    ifvalid (String, 1 characters ) 1
+    hash (NULL)
+    photo (String, 23 characters ) 20131226/1388067870.jpg
+    photo1 (String, 23 characters ) 20121018/1350554859.jpg
+    photo2 (String, 23 characters ) 20121227/1356614697.jpg
+    photo3 (String, 23 characters ) 20131226/1388067870.jpg
+    photo4 (NULL)
+    photo5 (NULL)
+    photo1_ifpass (String, 1 characters ) 1
+    photo2_ifpass (String, 1 characters ) 1
+    photo3_ifpass (String, 1 characters ) 1
+    photo4_ifpass (String, 1 characters ) 0
+    photo5_ifpass (String, 1 characters ) 0
+    photo1_modtime (String, 10 characters ) 1350554859
+    photo2_modtime (String, 10 characters ) 1356614697
+    photo3_modtime (String, 10 characters ) 1388067870
+    photo4_modtime (String, 10 characters ) 1350555001
+    photo5_modtime (NULL)
+    photo_showtype (String, 1 characters ) 1
+    friend_status (String, 1 characters ) 1
+    nationality (String, 0 characters )
+    blood (String, 1 characters ) 1
+    constellation (String, 0 characters )
+    star (String, 0 characters )
+    home_province (String, 2 characters ) 41
+    home_city (String, 4 characters ) 4117
+    nation (String, 1 characters ) 1
+    child (String, 0 characters )
+    speciality (String, 2 characters ) 15
+    decide_year (String, 0 characters )
+    decide_month (String, 0 characters )
+    decide_day (String, 0 characters )
+    wash_year (String, 0 characters )
+    wash_month (String, 0 characters )
+    wash_day (String, 0 characters )
+    wash_place (String, 0 characters )
+    company (String, 0 characters )
+    industry (String, 0 characters )
+    income_desc (String, 0 characters )
+    company_type (String, 0 characters )
+    university (String, 0 characters )
+    hause (String, 1 characters ) 3
+    auto (String, 0 characters )
+    costmost (String, 0 characters )
+    paihang (String, 0 characters )
+    smoke (String, 0 characters )
+    drink (String, 0 characters )
+    sport (String, 0 characters )
+    livecust (String, 0 characters )
+    language (String, 0 characters )
+    space (String, 0 characters )
+    pet (String, 0 characters )
+    romance (String, 0 characters )
+    important_person (String, 0 characters )
+    imt_person_reason (String, 0 characters )
+    parent_together (String, 0 characters )
+    child_want (String, 0 characters )
+    interest (String, 0 characters )
+    charac (String, 0 characters )
+    interest_movie (String, 0 characters )
+    interest_music (String, 0 characters )
+    interest_sport (String, 0 characters )
+    interest_food (String, 0 characters )
+    interest_book (String, 0 characters )
+    interest_place (String, 0 characters )
+    weight (String, 0 characters )
+    beau (String, 0 characters )
+    shape (String, 0 characters )
+    hair_style (String, 0 characters )
+    face_type (String, 0 characters )
+    truename (String, 0 characters )
+    idcard (String, 0 characters )
+    mobile (String, 0 characters )
+    phone (String, 0 characters )
+    homepage (String, 0 characters )
+    address (String, 0 characters )
+    postcode (String, 0 characters )
+    this_login_time (String, 10 characters ) 1404278454
+    last_login_time (String, 10 characters ) 1388067296
+    online_status (String, 1 characters ) 1
+    visitcount (String, 3 characters ) 105
+    ifhomepage (String, 1 characters ) 0
+    visit_list (String, 258 characters ) ,8776,,16186,18779,18721,,18721,,7198,14650,171...
+    certlevel (String, 1 characters ) 0
+    email_counter (String, 1 characters ) 0
+ */
+function love2in1_get_memeber_by_id($id) {
+  $result = Database::getConnection('default', 'love2in1')->select('member', 'p')
+    ->fields('p')
+    ->condition('id',$id)
+    ->execute()
+    ->fetchAssoc();
+  return $result;
+}
+
+function love2in1_bind($FromUserName,$email,$password,$service_uid) {
+  //邮箱，密码验证
+  $query = Database::getConnection('default', 'love2in1')->select('member', 'p')
+    ->fields('p', array('pwd','id','nickname'))
+    ->condition('email',$email)
+    ->execute();//'xiangkeguo@gmail.com'
+  foreach ($query as $record) {
+    // Do something with each $record
+    if($record->pwd == base64_encode($password)) {//the password way!!! bWprNW5q
+      $fields['uid'] = $record->id;
+      $fields['nickname'] = $record->nickname;
+      mp_service_update($FromUserName,$service_uid,$fields);
+      // mp_service_update($FromUserName,'uid',$uid,$service_uid);
+      // mp_service_update($FromUserName,'nickname',$nickname,$service_uid);
+      return TRUE;
+    }else{
+      return FALSE;
+    }
+  }
+}
+//isbind return 1;
+//if not bind!
+function love2in1_isbind($FromUserName,$service_uid){
+  $wechat_user = love2in1_get_mp_member($FromUserName,$service_uid);
+  if($wechat_user['uid']){//binded!!!
+    return TRUE;
+  }else{
+    return false;
+    // mp_service_update($FromUserName,'uid',get_uid_from_love2in1(),$service_uid);  
+  }
+}
+function love2in1_get_nickname($FromUserName,$service_uid){
+  $wechat_user = love2in1_get_mp_member($FromUserName,$service_uid);
+  return $wechat_user['nickname']?$wechat_user['nickname']:FALSE;
+}
+/**
+ * return
+ Array
+    (
+        [uid] => 11833
+        [fromusername] => owzhjuLh3OkTPbhgn5CaG09YXxHE
+        [created] => 1404122164
+        [last_cmd] => update_contact_info
+        [last_cmd_timestamp] => 1404184318
+        [fakeid] => 3773415
+        [groupid] => 0
+        [nickname] => 天空蔚蓝
+        [wxid] => 
+        [unsubscribe] => 0
+        [picture] => 0
+        [wxnickname] => 天空蔚蓝
+        [contact_info] => a:10:{s:7:"fake_id";i:3773415;s:9:"nick_name";s:12:"天空蔚蓝";s:9:"user_name";s:0:"";s:9:"signature";s:63:"我只仰望你！天空依然蔚蓝，虽然有时你看不见";s:4:"city";s:6:"朝阳";s:8:"province";s:6:"北京";s:7:"country";s:6:"中国";s:6:"gender";i:1;s:11:"remark_name";s:0:"";s:8:"group_id";i:0;}
+        [mp_uid] => 635
+    )
+ */
+function love2in1_get_mp_member($FromUserName,$service_uid) {
+  $result = db_select('mp_service', 'c')
+    ->fields('c')
+    ->condition('fromusername', $FromUserName)
+    ->condition('mp_uid', $service_uid)
+    ->execute()
+    ->fetchAssoc();
+  return $result;
+}

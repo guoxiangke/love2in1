@@ -1,0 +1,7 @@
+name = love2in1
+description = Connect Drupal with Wechat for love2in1.
+core = 7.x
+package = A-DEV
+
+dependencies[] = wechat
+;configure = admin/config/wechat/config
