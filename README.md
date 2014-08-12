@@ -12,3 +12,8 @@ http://new.love2in1.com/?q=admin/structure/menu/manage/wechat
 * 微信服务号API设置地址 
 
 http://new.love2in1.com/?q=admin/config/wechat
+
+
+*微信模块的位置
+
+love2in1/sites/all/modules/customs/wechat_plus

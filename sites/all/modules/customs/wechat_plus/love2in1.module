@@ -70,7 +70,7 @@ function love2in1_wechat_message($weObj){
                 //
               }else{
                 //error password or email!!!
-                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n(实际情况是密码或邮箱不对！)")->reply();
+                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n")->reply();
               }
             }
           }else{
