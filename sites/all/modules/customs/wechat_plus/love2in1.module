@@ -4,7 +4,7 @@ function love2in1_wechat_message($weObj){
   $mp_services_config['account'] = 'love2in1@163.com';
   $mp_services_config['password'] = 'zhuaiheyi2009';
   $service_uid = '635';
-	if(!is_array($weObj->Message(''))){ // add default option
+  if(!is_array($weObj->Message(''))){ // add default option
     $type = $weObj->getRev()->getRevType();
     $FromUserName =  $weObj->getRev()->getRevFrom();
     $mp_member = love2in1_get_mp_member($FromUserName,$service_uid);
@@ -34,6 +34,22 @@ function love2in1_wechat_message($weObj){
               mp_service_update_cmd('qx',$FromUserName,$service_uid);
               $weObj->text("指令已取消！\n回复建议+内容，提出意见！")->reply();
           }
+          $help_keywords = array('帮助','?','？','不会用');
+          watchdog('keyword', $keyword, array(), WATCHDOG_NOTICE, 'link');
+          if( in_array($keyword, $help_keywords) || in_array($check_keyword, $help_keywords) ) {
+            $help_content = '用户输入”帮助“  查看功能的使用说明?内容';
+            $img = array(
+              'Title'=>'用户输入”帮助“  查看功能的使用说明?内容',
+              'Description'=>'内容摘要，摘要60字，可以文字或单条图文来解释说明。',
+              'PicUrl'=>'https://farm9.staticflickr.com/8526/8499223554_c1fc3b888f.jpg',
+              'Url'=>'http://mp.weixin.qq.com/s?__biz=MjM5ODQ4NjU4MA==&mid=200643642&idx=1&sn=9a6da3075bba7f5001bd5a57ab9f1c6d#rd'
+            );
+            $news[] = $img;
+            //单图文 标题15字 摘要60字
+            //多图文 1标题16字 2标题15字
+            $weObj->news($news)->reply();
+            $weObj->text($help_content)->reply();
+          }
           //begin
           if (filter_var($keyword, FILTER_VALIDATE_EMAIL)) {
               // e-mail address
@@ -46,14 +62,15 @@ function love2in1_wechat_message($weObj){
               $email = strstr($mp_member['last_cmd'], ':');
               $email =  str_replace(':', '', $email);
               $password = $keyword;
-              $bind = love2in1_bind($FromUserName,$email,$password,$service_uid);
-              if($bind){
+              $bind_uid = love2in1_bind($FromUserName,$email,$password,$service_uid);
+              if($bind_uid){
                 //sucess
-                $weObj->text("nickname 弟兄，恭喜您绑定成功！现在点击”查看私信“，看看谁给您写过信吧～不过要有平常心哦～因为神早已预备！")->reply();
+                $member = love2in1_get_memeber_by_id($bind_uid);
+                $weObj->text($member['nickname'].(($member['sex'] == 'f')?'姊妹':'弟兄')."，恭喜您绑定成功！现在点击”查看私信“，看看谁给您写过信吧～不过要有平常心哦～因为神早已预备！")->reply();
                 //
               }else{
                 //error password or email!!!
-                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n密码或邮箱不对！")->reply();
+                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n(实际情况是密码或邮箱不对！)")->reply();
               }
             }
           }else{
@@ -63,7 +80,8 @@ function love2in1_wechat_message($weObj){
                 $msg_id =  str_replace(':', '', $readmsg);
                 $new_message = $keyword;
                 mp_service_update_cmd('msg_reply:'.$msg_id.':'.$keyword,$FromUserName,$service_uid);
-                $weObj->text("是否将您发送的私信内容回复给\n回复“是”发送私信\n回复“否”取消发送")->reply();
+                $msg = love2in1_get_message_by_id($msg_id);
+                $weObj->text("是否将您发送的私信内容回复给".$msg['sendfrom']."\n回复“是”发送私信\n回复“否”取消发送")->reply();
             }
             if(!(strpos($mp_member['last_cmd'], 'msg_reply') === false) && $keyword == '是'){
                 
@@ -82,7 +100,11 @@ function love2in1_wechat_message($weObj){
                     );
                 $new_msg_id = love2in1_new_message($fields);
                 if($new_msg_id){
-                  $weObj->text("您的私信已经成功发送给了".$old_message['sendfrom']."\n点击“查看私信”，查看其他人给您的私信\n回复“建议 +内容”，您可以给我们提建议哦！")->reply();
+                  $weObj->text('您的私信已经成功发送给了'.$old_message['sendfrom'].'！
+点击“查看私信”，查看其他人给您的私信
+回复“建议 +内容”，您可以给我们提建议哦！
+点击“365”，
+点击“听”')->reply();
                   mp_service_update_cmd('qx',$FromUserName,$service_uid);
                 }else{
                    $weObj->text("发送失败！\n回复建议+内容，提出意见！")->reply();
@@ -100,14 +122,15 @@ function love2in1_wechat_message($weObj){
               }
               mp_service_update_cmd('readmsg:'.$msg_id,$FromUserName,$service_uid);
               $img = array(
-                  'Title'=> "▼ ".$msg['sendfrom']."▼不想发送请回复qx\n 注意，您下次回复的内容即可给ta，",
+                  'Title'=> $msg['sendfrom'].' '.date("n月j日",$msgObj->sendtime)."给您的私信内容如下：▼ ",
+                  // ."▼不想发送请回复qx\n 注意，您下次回复的内容即可给ta，",
                   'Description'=>'',
-                  'PicUrl'=>'',
+                  'PicUrl'=>'http://ybzx.u.qiniudn.com/love2in1/message2.png',
                   'Url'=>''
                 );
               $news[] = $img;
               $img = array(
-                  'Title'=> $msg['content'] ,
+                  'Title'=> $msg['content'] ."\n------------------\n直接输入内容，回信给".$msg['sendfrom']."吧\n如果不想回信，可以输入”qx“哦",
                   'Description'=>'',
                   'PicUrl'=>'',
                   'Url'=>''
@@ -115,15 +138,27 @@ function love2in1_wechat_message($weObj){
               $news[] = $img;
               $weObj->news($news)->reply(); 
           }
-          exit;
+
+          $weObj->text("用户输入的内容不能识别时，随机回复一段经文???这个。。。")->reply();
         break;
-  	  case Wechat::MSGTYPE_EVENT:
-  	    $event = $weObj->getRevEvent();
+      case Wechat::MSGTYPE_EVENT:
+        $event = $weObj->getRevEvent();
         if(!$event){
           break;
         }else if($event['event']=='subscribe'){
-  	      $weObj->text(variable_get("wechat_follow_message", variable_get("wechat_default_message", 'Hi, WeChat!')));
-  	    }
+          // $weObj->text(variable_get("wechat_follow_message", variable_get("wechat_default_message", 'Hi, WeChat!')));
+           $img = array(
+              'Title'=>'主爱合一简史',
+              'Description'=>'合一互动服务号目前主要提供私信交流和听两个功能。通过私信交流就可以用手机和主爱合一的其他弟兄姊妹交流了。听主要是我们精心准备的讲道信息。',
+              'PicUrl'=>'https://farm8.staticflickr.com/7317/8730739154_7a2706fd27.jpg',
+              'Url'=>'http://mp.weixin.qq.com/s?__biz=MjM5ODQ4NjU4MA==&mid=200643642&idx=1&sn=9a6da3075bba7f5001bd5a57ab9f1c6d#rd'
+            );
+           $news[] = $img;
+            //单图文 标题15字 摘要60字
+            //多图文 1标题16字 2标题15字
+            $weObj->news($news)->reply();
+
+        }
         else if($event['event']=='CLICK') {          
           if($event['key'] == 'GET_SONG'){
             // $news = ybzx_get_nodes($type = 'article', $counts = 1);
@@ -155,23 +190,31 @@ function love2in1_wechat_message($weObj){
             $img = array(
                 'Title'=> '▼回复私信编号查看私信内容',//，您有('.$unread_count.')条未读私信▼
                 'Description'=>'',
-                'PicUrl'=>'',//http://www.yongbuzhixi.com/sites/all/themes/love/family_1.png
+                'PicUrl'=>'http://ybzx.u.qiniudn.com/love2in1/webwxgetmsgimg.jpg',//http://www.yongbuzhixi.com/sites/all/themes/love/family_1.png
                 'Url'=>'http://www.3dedu.net/my_mailbox_inbox.php'
               );
             $news[] = $img;
             $messages = love2in1_get_messages($mp_member['nickname'],10);
             $messages_return = ''; 
-            foreach ($messages as $key => $msgObj) {
-              $messages_return .= ''.$msgObj->id.'▌['.$msgObj->sendfrom.'] '.date("n月j日",$msgObj->sendtime).'来信'.(!($msgObj->ifread)?'*new':'')."\n" ;
-            }
-            mp_service_update_cmd('GET_MSG',$FromUserName,$service_uid);
-
-            $img = array(
-                'Title'=> $messages_return,
-                //▌◤▲▼
+            if(count($messages)) {
+              foreach ($messages as $key => $msgObj) {
+                $messages_return .= '回复【'.$msgObj->id.'】查看'.$msgObj->sendfrom.date("n月j日",$msgObj->sendtime).'发给您的私信'."\n" ;//.(!($msgObj->ifread)?'*new':'')
+              }
+              $img = array(
+                'Title'=> $messages_return,//▌◤▲▼
                 'PicUrl'=>'',
                 'Url'=>''
               );
+            }else{
+              $messages_return = '暂无未读私信！！！还没有人给你私信哦！^_^'; 
+              $img = array(
+                'Title'=> $messages_return,
+                'PicUrl'=>'http://ybzx.u.qiniudn.com/love2in1/message.png',
+                'Url'=>''
+              );
+            }
+            mp_service_update_cmd('GET_MSG',$FromUserName,$service_uid);
+            
             $news[] = $img;
 
             //admin messages begin
@@ -188,22 +231,13 @@ function love2in1_wechat_message($weObj){
                 );
               $news[] = $img;
             }
-            // $img = array(
-            //   'Title'=>'用手机，登录【永不止息】^_^',
-            //   'Description'=>'单图文 标题15字 摘要60字',
-            //   'PicUrl'=>'http://www.yongbuzhixi.com/sites/default/files/pictures/picture-172-1356487827.jpg',
-            //   'Url'=>'http://yongbuzhixi.com'
-            // );
-            //单图文 标题15字 摘要60字
-            //多图文 1标题16字 2标题15字
             $weObj->news($news)->reply();
-
             exit;            
           }
           // $message = _wechat_menu_default_message($event);
           // $message && $weObj->text($message);
         }
-  		  break;
+        break;
     }
   }
   if(!is_array($weObj->Message(''))){
@@ -232,7 +266,7 @@ function love2in1_get_messages($nickname,$rang = 9){
       $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
         ->fields('p')
         ->condition('sendto',$nickname)
-       // ->condition('ifread',0) unreader
+        ->condition('ifread',0) //unreader
         ->condition('status','send')
         ->condition('to_del','1','!=')
         // ->condition('from_del','1','!=')
@@ -462,7 +496,7 @@ function love2in1_bind($FromUserName,$email,$password,$service_uid) {
       mp_service_update($FromUserName,$service_uid,$fields);
       // mp_service_update($FromUserName,'uid',$uid,$service_uid);
       // mp_service_update($FromUserName,'nickname',$nickname,$service_uid);
-      return TRUE;
+      return $record->id;
     }else{
       return FALSE;
     }
