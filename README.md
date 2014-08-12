@@ -23,12 +23,19 @@ love2in1/sites/all/modules/customs/wechat_plus
 在sites/default/settings.php文件里添加以下代码
 
    $databases['love2in1']['default'] = array(
+
     'driver' => 'mysql',
+
     'database' => 'databasename',
+
     'username' => 'username',
+
     'password' => 'password',
+
      'host' => 'localhost',
+
      'prefix' => '',
+
    );
 
 
