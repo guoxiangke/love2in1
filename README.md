@@ -4,3 +4,11 @@ http://drupalcode.org/project/jquery_update.git/snapshot/baff5d15a438cfa8216997e
 
 安装指南
 
+
+* 微信服务号菜单设置地址 
+
+http://new.love2in1.com/?q=admin/structure/menu/manage/wechat 
+
+* 微信服务号API设置地址 
+
+http://new.love2in1.com/?q=admin/config/wechat
