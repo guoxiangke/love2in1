@@ -30,6 +30,33 @@ function love2in1_wechat_message($weObj){
             $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]谢谢反馈！";
             $weObj->text($contentStr)->reply();
           }
+         if ($check_keyword == '祷告' || $check_keyword == '代祷') {
+             // $reply = _mp_node_create($keyword);
+             //201+您想说的话
+             if(strlen($keyword) < 10 ) {
+                 $contentStr = $check_keyword."内容不能少于10字！";
+             }else{
+                 $mp_service_records = mp_service_get_record($FromUserName);
+                 if(0&&$mp_service_records['last_cmd'] == $check_keyword) {
+                     $contentStr = "每天只需发布一条信息，请明天再来吧！\n";
+                 }else{
+                     mp_service_update_cmd($check_keyword,$FromUserName,$service_uid);
+                     //getUserInfo
+                     // watchdog('getRevFrom', '<pre>'.print_r($weObj->getRevFrom(),true), array(), WATCHDOG_NOTICE, 'link');
+                     // watchdog('getUserInfo', '<pre>'.print_r($weObj->getUserInfo($weObj->getRevFrom()),true), array(), WATCHDOG_NOTICE, 'link');
+                     // watchdog('getUserList', '<pre>'.print_r($weObj->getUserList(),true), array(), WATCHDOG_NOTICE, 'link');
+                     // watchdog('getRev', '<pre>'.print_r($weObj->getRev(),true), array(), WATCHDOG_NOTICE, 'link');
+                     // $wechat_user_info = mp_service_get_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid);
+                     $wechat_user_info = $weObj->getUserInfo($weObj->getRevFrom());
+                     // wx_comment('520',$keyword,$wechat_user_info);
+                     $pid = 0;
+                     wx_comment_4love2in1('520',$keyword,$wechat_user_info,$pid);
+                     $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/520';
+                 }
+             }
+             # code...
+             $weObj->text($contentStr)->reply();
+         }
           if($keyword == 'qx' || $keyword == '否') {
               mp_service_update_cmd('qx',$FromUserName,$service_uid);
               $weObj->text("指令已取消！\n回复建议+内容，提出意见！")->reply();
@@ -139,7 +166,7 @@ function love2in1_wechat_message($weObj){
               $weObj->news($news)->reply(); 
           }
 
-          $weObj->text("用户输入的内容不能识别时，随机回复一段经文???这个。。。")->reply();
+          $weObj->service("用户输入的内容不能识别时，随机回复一段经文???这个。。。")->reply();
         break;
       case Wechat::MSGTYPE_EVENT:
         $event = $weObj->getRevEvent();
@@ -160,6 +187,33 @@ function love2in1_wechat_message($weObj){
 
         }
         else if($event['event']=='CLICK') {          
+          if($event['key'] == 'GET_PRAY' || $event['key'] == 'pray'){
+            $nid = '520';
+            $comments = comment_get_recent_by_nid($nid,5);
+            $contentStr = '';
+            foreach ($comments as $key => $comment) {
+              $contentStr .= "【代祷事项 ".($key+1)." 】".$comment->subject." 回复“祷告+ ".$comment->cid."+祷告内容 ”为他代祷\n";
+              # code...（代祷事项ID为他祷告）
+            }
+            $img = array(
+              'Title'=>'祷告墙',
+              'Description'=>'提前2:1 我劝你，第一要为万人恳求、祷告、代求、祝谢。 雅5:16 所以你们要彼此认罪，互相代求，使你们可以得医治。',
+              'PicUrl'=>'https://farm8.staticflickr.com/7317/8730739154_7a2706fd27.jpg',
+              'Url'=>'http://mp.weixin.qq.com/s?__biz=MjM5ODQ4NjU4MA==&mid=200643642&idx=1&sn=9a6da3075bba7f5001bd5a57ab9f1c6d#rd'
+            );
+           $news[] = $img;
+            $img = array(
+              'Title'=>$contentStr,
+              'Description'=>'',
+              'PicUrl'=>'',
+              'Url'=>''
+            );
+           $news[] = $img;
+            //单图文 标题15字 摘要60字
+            //多图文 1标题16字 2标题15字
+            $weObj->news($news)->reply();
+            exit;    
+          }          
           if($event['key'] == 'GET_SONG'){
             // $news = ybzx_get_nodes($type = 'article', $counts = 1);
             // $weObj->news($news)->reply(); exit;
@@ -545,4 +599,93 @@ function love2in1_get_mp_member($FromUserName,$service_uid) {
     ->execute()
     ->fetchAssoc();
   return $result;
+}
+
+
+/**
+ * Find the most recent comments that are available to the current user.
+ *
+ * @param integer $number
+ *   (optional) The maximum number of comments to find. Defaults to 10.
+ *
+ * @return
+ *   An array of comment objects or an empty array if there are no recent
+ *   comments visible to the current user.
+ */
+function comment_get_recent_by_nid($nid,$number = 10) {
+  $query = db_select('comment', 'c');
+  $query->innerJoin('node', 'n', 'n.nid = c.nid');
+  $query->addTag('node_access');
+  $comments = $query
+    ->fields('c')
+    ->condition('n.nid', $nid)
+    ->condition('c.status', COMMENT_PUBLISHED)
+    // ->condition('n.status', NODE_PUBLISHED
+    ->orderBy('c.created', 'DESC')
+    // Additionally order by cid to ensure that comments with the same timestamp
+    // are returned in` the exact order posted.
+    ->orderBy('c.cid', 'DESC')
+    ->range(0, $number)
+    ->execute()
+    ->fetchAll();
+
+  return $comments ? $comments : array();
+}
+/**
+ * $wechat_user_info
+ Array
+(
+    [subscribe] => 1
+    [openid] => owzhjuLh3OkTPbhgn5CaG09YXxHE
+    [nickname] => 天空蔚蓝
+    [sex] => 1
+    [language] => zh_CN
+    [city] => 朝阳
+    [province] => 北京
+    [country] => 中国
+    [headimgurl] => http://wx.qlogo.cn/mmopen/PiajxSqBRaEKpjTUkUvbSvHeUyjQO47Mg8uZRr51qBDYO0z6Bj24JxIibwicXOqd3lhSvshUqaj3z9zzuR6hcDB2Q/0
+    [subscribe_time] => 1407801187
+    [unionid] => o2T-ljnxRQRqmsLUfABb0aX-5e6E
+    [remark] => 
+)
+*/
+
+function wx_comment_4love2in1($nid,$keyword,$wechat_user_info=array(),$pid=0) {//,
+  ///////
+  // watchdog('wx_comment-wechat_user_info', '<pre>'.print_r($wechat_user_info,true), array(), WATCHDOG_NOTICE, 'link');
+                  $comment = new stdClass();
+
+                  $comment->nid = $nid; // nid of a node you want to attach a comment to
+                  $comment->cid = 0; // leave it as is
+                  $comment->pid = $pid; // parent comment id, 0 if none 
+                  $comment->uid = 0; // user's id, who left the comment
+                  
+                  $comment->mail = '';//isset($wechat_user_info['openid'])?$wechat_user_info['openid'].'@yongbuzhixi.com':'anno@duoenjia.com';// // user's email wechat_user_info
+                  //a:10:{s:7:"fake_id";i:2553430760;s:9:"nick_name";s:6:"麦青";s:9:"user_name";s:10:"maiqing-py";s:9:"signature";s:31:"在心中修篱种菊..........";s:4:"city";s:6:"昆明";s:8:"province";s:6:"云南";s:7:"country";s:6:"中国";s:6:"gender";i:2;s:11:"remark_name";s:0:"";s:8:"group_id";i:108;}
+// $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
+                  $comment->name = isset($wechat_user_info['nickname'])?$wechat_user_info['nickname']:'微信用户';//; // If user is authenticated you can omit this field, it will be auto-populated, if the user is anonymous and you want to name him somehow, input his name here
+                  // $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
+                  $comment->hostname = $_SERVER['REMOTE_ADDR'] ;// OPTIONAL. You can log poster's ip here
+                  $comment->created = time(); // OPTIONAL. You can set any time you want here. Useful for backdated comments creation.
+                  $comment->is_anonymous = 0; // leave it as is
+                  $comment->homepage = ''; // you can add homepage URL here
+                  $comment->status = COMMENT_PUBLISHED;//COMMENT_PUBLISHED; // We auto-publish this comment
+                  $comment->language = LANGUAGE_NONE; // The same as for a node
+                  // $keyword = substr($keyword, 2);
+                  $subject = truncate_utf8($keyword, 15, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1);
+                  $comment->subject = $subject; 
+                  
+                  // $comment->signature = '';//$wechat_user_info['contact_info']['signature'] ;
+                  
+                  // $comment->signature_format = 'filtered_html'; 
+                  $comment->comment_body[$comment->language][0]['value'] = $keyword; // Everything here is pretty much like with a node
+                  $comment->comment_body[$comment->language][0]['format'] = 'filtered_html'; 
+                  // $comment->field_custom_field_name[LANGUAGE_NONE][0]['value'] = 'Some value'; // OPTIONAL. If your comment has a custom field attached it can added as simple as this // preparing a comment for a save
+
+                   // saving a comment
+                  ///////////end
+                  if($comment = comment_submit($comment)) { // Prepare node for saving                      
+                      comment_save($comment);
+                      return $comment;
+                  }
 }
