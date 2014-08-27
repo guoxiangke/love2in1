@@ -5,7 +5,7 @@
 	include("wechatext.class.php");
 	
 	function logdebug($text){
-		file_put_contents('data/log.txt',$text."\n",FILE_APPEND);		
+		file_put_contents(DRUPAL_ROOT.'/'.drupal_get_path('module','mp_service').'/data/log.txt',$text."\n",FILE_APPEND);		
 	};
 	
 	// $options = array(

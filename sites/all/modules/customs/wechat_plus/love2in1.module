@@ -15,14 +15,44 @@ function love2in1_wechat_message($weObj){
     switch($type) {
      case Wechat::MSGTYPE_TEXT:
           $keyword =  trim($weObj->getRevContent());
-          // watchdog('FromUserName-keyword', $FromUserName.' - '.$keyword, array(), WATCHDOG_NOTICE, 'link');
            // $wechat_user_info = getUserInfo();
-
-          // watchdog('wechat_user_info222record', '<pre>'.print_r($mp_member,true), array(), WATCHDOG_NOTICE, 'link');
           $wechat_user_info = mp_service_update_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid );
 
-          // watchdog('wechat_user_info', '<pre>'.print_r($wechat_user_info,true), array(), WATCHDOG_NOTICE, 'link');
           $check_keyword = truncate_utf8($keyword, 2, $wordsafe = FALSE, $add_ellipsis = FALSE, $min_wordsafe_length = 1);
+
+          //@url https://github.com/guoxiangke/love2in1/issues/5 
+          //@response 回复1为他祷告！ funcution get_pray_detail!
+          if(strpos($mp_member['last_cmd'], 'GET_PRAY：') !== false ) {
+            //|| (strpos($mp_member['last_cmd'], 'PRAY_FOR：') !== false &&  is_numeric($keyword))
+            $last_comments = explode(',', str_replace('GET_PRAY：', '', $mp_member['last_cmd']));
+            if(is_numeric($keyword) && $keyword <= 5) {
+              $cid = $last_comments[$keyword-1];
+              mp_service_update_cmd('PRAY_FOR：' . $cid, $FromUserName, $service_uid);              
+              $comment = comment_load($cid);
+              $contentStr = $comment->comment_body[LANGUAGE_NONE][0]['value']."\n注意，下次您回复的任意内容（>5个字）作为代祷内容发送，否则请qx";
+            }else{
+              $contentStr = '指令回复不正确，请qx或一个小于5的数字...';
+            }
+            $weObj->text($contentStr)->reply();
+          }
+          //PRAY_FOR：
+          if(strpos($mp_member['last_cmd'], 'PRAY_FOR：') !== false) {
+            $pid = str_replace('PRAY_FOR：', '', $mp_member['last_cmd']);
+            $contentStr = $keyword;
+            if(strlen($keyword) >= 10) {
+              // $cid = $last_comments[$keyword-1];          
+              //comment_add!
+              wx_comment_4love2in1('520',$keyword,$wechat_user_info,$pid);
+              $contentStr = '[微笑]代祷成功发布！谢谢！';
+              $contentStr .= "\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/520';
+
+              mp_service_update_cmd('qx',$FromUserName,$service_uid);
+            }else{
+              $contentStr = '代祷内容不能少于10个字，请qx或。。。';
+            }
+            $weObj->text($contentStr)->reply();
+          }
+
           if ($check_keyword == '建议' || $check_keyword == '意见') {
             mp_service_update_cmd($check_keyword,$FromUserName,$service_uid);
             $wechat_user_info = mp_service_get_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid);
@@ -62,7 +92,6 @@ function love2in1_wechat_message($weObj){
               $weObj->text("指令已取消！\n回复建议+内容，提出意见！")->reply();
           }
           $help_keywords = array('帮助','?','？','不会用');
-          watchdog('keyword', $keyword, array(), WATCHDOG_NOTICE, 'link');
           if( in_array($keyword, $help_keywords) || in_array($check_keyword, $help_keywords) ) {
             $help_content = '用户输入”帮助“  查看功能的使用说明?内容';
             $img = array(
@@ -97,7 +126,7 @@ function love2in1_wechat_message($weObj){
                 //
               }else{
                 //error password or email!!!
-                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n")->reply();
+                $weObj->text("哦～ 您输入的密码不对呀，淡定，再输入一次试试吧～\n(实际情况是密码或邮箱不对！)")->reply();
               }
             }
           }else{
@@ -186,15 +215,25 @@ function love2in1_wechat_message($weObj){
             $weObj->news($news)->reply();
 
         }
-        else if($event['event']=='CLICK') {          
+        else if($event['event']=='CLICK') {   
+
+          if($event['key'] == 'CMD_Cancel'){
+            mp_service_update_cmd('qx',$FromUserName,$service_uid);
+            $weObj->text("指令已取消！\n回复建议+内容，提出意见！")->reply();
+          }
+
           if($event['key'] == 'GET_PRAY' || $event['key'] == 'pray'){
             $nid = '520';
             $comments = comment_get_recent_by_nid($nid,5);
             $contentStr = '';
             foreach ($comments as $key => $comment) {
-              $contentStr .= "【代祷事项 ".($key+1)." 】".$comment->subject." 回复“祷告+ ".$comment->cid."+祷告内容 ”为他代祷\n";
+              $contentStr .= "●【".($key+1)."】".$comment->subject."\n";
+              //“祷告+ ".$comment->cid."+祷告内容 ”为他代祷
+              $get_comments[] = $comment->cid;
               # code...（代祷事项ID为他祷告）
-            }
+            } 
+            $contentStr .= "\n回复1~5为他祷告！";
+            mp_service_update_cmd('GET_PRAY：'.implode(',', $get_comments),$FromUserName,$service_uid);
             $img = array(
               'Title'=>'祷告墙',
               'Description'=>'提前2:1 我劝你，第一要为万人恳求、祷告、代求、祝谢。 雅5:16 所以你们要彼此认罪，互相代求，使你们可以得医治。',
@@ -601,6 +640,7 @@ function love2in1_get_mp_member($FromUserName,$service_uid) {
   return $result;
 }
 
+
 /**
  * Find the most recent comments that are available to the current user.
  *
@@ -618,6 +658,7 @@ function comment_get_recent_by_nid($nid,$number = 10) {
   $comments = $query
     ->fields('c')
     ->condition('n.nid', $nid)
+    ->condition('c.pid', 0)
     ->condition('c.status', COMMENT_PUBLISHED)
     // ->condition('n.status', NODE_PUBLISHED
     ->orderBy('c.created', 'DESC')
@@ -651,7 +692,6 @@ function comment_get_recent_by_nid($nid,$number = 10) {
 
 function wx_comment_4love2in1($nid,$keyword,$wechat_user_info=array(),$pid=0) {//,
   ///////
-  // watchdog('wx_comment-wechat_user_info', '<pre>'.print_r($wechat_user_info,true), array(), WATCHDOG_NOTICE, 'link');
                   $comment = new stdClass();
 
                   $comment->nid = $nid; // nid of a node you want to attach a comment to
@@ -680,7 +720,6 @@ function wx_comment_4love2in1($nid,$keyword,$wechat_user_info=array(),$pid=0) {/
                   $comment->comment_body[$comment->language][0]['value'] = $keyword; // Everything here is pretty much like with a node
                   $comment->comment_body[$comment->language][0]['format'] = 'filtered_html'; 
                   // $comment->field_custom_field_name[LANGUAGE_NONE][0]['value'] = 'Some value'; // OPTIONAL. If your comment has a custom field attached it can added as simple as this // preparing a comment for a save
-
                    // saving a comment
                   ///////////end
                   if($comment = comment_submit($comment)) { // Prepare node for saving                      

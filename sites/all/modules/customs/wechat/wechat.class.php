@@ -42,6 +42,7 @@
 class Wechat
 {
 	const MSGTYPE_TEXT = 'text';
+	const MSGTYPE_CUSTOMER_SERVICE = 'transfer_customer_service';
 	const MSGTYPE_IMAGE = 'image';
 	const MSGTYPE_LOCATION = 'location';
 	const MSGTYPE_LINK = 'link';
@@ -182,6 +183,30 @@ class Wechat
     
     /**
      * 获取微信服务器发来的信息
+     Wechat Object
+(
+    [token:Wechat:private] => gh_b6f963c00b16
+    [appid:Wechat:private] => wxc79bc927abe2518b
+    [appsecret:Wechat:private] => 81ccfecbc7479ac50c1cb2a9f7d9c17e
+    [access_token:Wechat:private] => 
+    [user_token:Wechat:private] => 
+    [_msg:Wechat:private] => 
+    [_funcflag:Wechat:private] => 
+    [_receive:Wechat:private] => Array
+        (
+            [ToUserName] => gh_b6f963c00b16
+            [FromUserName] => owzhjuLh3OkTPbhgn5CaG09YXxHE
+            [CreateTime] => 1408114668
+            [MsgType] => text
+            [Content] => 代祷这个祷告少于十个子可口可乐了
+            [MsgId] => 6047806448278282504
+        )
+
+    [debug] => 
+    [errCode] => 40001
+    [errMsg] => no access
+    [_logcallback:Wechat:private] => 
+)
      */
 	public function getRev()
 	{
@@ -430,7 +455,23 @@ class Wechat
 		$this->Message($msg);
 		return $this;
 	}
-	
+	/**
+	 * 设置多客服消息
+	 * Examle: $obj->service('hello')->reply();
+	 * @param string $text
+	 */
+	public function service($text='')
+	{
+		$msg = array(
+			'ToUserName' => $this->getRevFrom(),
+			'FromUserName'=>$this->getRevTo(),
+			'CreateTime'=>time(),
+			'MsgType'=>self::MSGTYPE_CUSTOMER_SERVICE,//transfer_customer_service
+			// 'Content'=>$text,
+		);
+		$this->Message($msg);
+		return $this;
+	}
 	/**
 	 * 设置回复音乐
 	 * @param string $title
@@ -825,6 +866,21 @@ class Wechat
 	 * 获取关注者详细信息
 	 * @param string $openid
 	 * @return array
+	 Array
+(
+    [subscribe] => 1
+    [openid] => owzhjuLh3OkTPbhgn5CaG09YXxHE
+    [nickname] => 天空蔚蓝
+    [sex] => 1
+    [language] => zh_CN
+    [city] => 朝阳
+    [province] => 北京
+    [country] => 中国
+    [headimgurl] => http://wx.qlogo.cn/mmopen/PiajxSqBRaEKpjTUkUvbSvHeUyjQO47Mg8uZRr51qBDYO0z6Bj24JxIibwicXOqd3lhSvshUqaj3z9zzuR6hcDB2Q/0
+    [subscribe_time] => 1407801187
+    [unionid] => o2T-ljnxRQRqmsLUfABb0aX-5e6E
+    [remark] => 
+)
 	 */
 	public function getUserInfo($openid){
 		if (!$this->access_token && !$this->checkAuth()) return false;

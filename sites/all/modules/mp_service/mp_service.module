@@ -40,6 +40,70 @@ function wx_response($name, $wx_mp_id = 'gh_a1f2569abd7f') {
   $wechatObj = new Wechat($options);
   // $wechatObj->valid();
   $type = $wechatObj->getRev()->getRevType();
+  if($name == 'duoenjiawizbee'){
+    $default_text = "多恩佳Wizbee英语是一家提供'英语口语'培训的机构 
+培训模式：真人外教通过网络在线视频1对1上课，学生天天在家跟外教面对面上课 
+适合年龄：6-18岁学生及成人
+学习教材：根据每个学生的英语水平和学习目标配置个性化教材，例如：Wizbee口语教材，新概念英语，剑桥少儿英语，绿色通道，商务英语、出国口语、雅思托福口语等 
+上课时间：自由，根据学员时间而定 
+学习目标：提高英语交流能力，培养学习兴趣，让英语成为“第二母语” 
+今日免费送出几个试听名额 
+请拨打4006997101咨询 或回复“姓名+手机+QQ”申请";    
+    switch($type) {
+        case Wechat::MSGTYPE_TEXT:
+        $keyword =  trim($wechatObj->getRevContent());
+        $FromUserName =  $wechatObj->getRev()->getRevFrom();
+        watchdog('FromUserName-keyword', $FromUserName.' - '.$keyword, array(), WATCHDOG_NOTICE, 'link');
+        if(strlen($keyword)>=11 && (stripos($keyword,'13')!== false || stripos($keyword,'15')!== false || stripos($keyword,'18')!== false)) {
+            wx_comment('376',$keyword,array());
+            $wechatObj->text("感谢您申请我们的试听课程！
+课程顾问会尽快联系您，给您安排外教上课。
+请您提前安装好skype软件，并注册账号，还有准备好耳机耳麦，以备上课使用。")->reply();
+        }elseif(strlen($keyword)<11 && (stripos($keyword,'13')!== false || stripos($keyword,'15')!== false || stripos($keyword,'18')!== false)) {
+            wx_comment('376',$keyword,array());
+            $wechatObj->text("系统检测到提供的手机号好像不对，请重新输入！")->reply();
+
+        }
+        switch ($keyword) {
+          case '给女儿的画':
+          case '女儿的画':
+            $Title = "给女儿的画";
+            $Url ='http://mp.weixin.qq.com/mp/appmsg/show?__biz=MjM5NDQwOTc4MQ==&appmsgid=10000183&itemidx=1&sign=61c017b54de2e9f8a6e6a51a5608b122#wechat_redirect';
+            $Description = "感谢您的关注多恩佳wizbee英语，精彩内容天天与您分享！\n回复 1 获得公司和课程信息\n回复 姓名+手机+QQ 获得今日送出的真人外教一对一免费课程[微笑]";
+            $img = array(
+              'Title'=> $Title,
+              'Description'=>$Description,
+              'PicUrl'=>"http://mmsns.qpic.cn/mmsns/svNBBrM5CatMFvblTlr1g3gtlSkLyTx2jvVYb8Ct839OXIys0roTVA/0.jpg",
+              'Url'=> $Url
+            );
+            $news[] = $img;         
+            $wechatObj->news($news)->reply(); return;
+            break;
+          case '0':
+          case '1':
+            $wechatObj->text($default_text)->reply();
+            break;
+          default:
+            wx_comment('376',$keyword);
+            $wechatObj->text($default_text)->reply();
+            break;
+        }
+          exit;
+          break;
+        case Wechat::MSGTYPE_EVENT:
+          $wechatObj->text("感谢您的关注<a href='weixin://contacts/profile/duoenjiawizbee'>多恩佳wizbee英语</a>
+            精彩内容天天与您分享！ 
+回复 0 获得公司和课程信息
+回复 姓名+手机+QQ 
+获得今日送出的真人外教一对一免费课程[微笑]")->reply();
+          break;
+        case Wechat::MSGTYPE_IMAGE:
+          $wechatObj->text("暂时不支持图片响应！")->reply();
+          break;
+        default:
+          $wechatObj->text($default_text)->reply();
+    }
+  }
 
   if($name == '永不止息' || $wx_mp_id == 'gh_b945c807e7ec') {
     watchdog('name', $name, array(), WATCHDOG_NOTICE, 'link');
@@ -134,14 +198,17 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
       //$keyword == 'xl'
       //$keyword == 'xl01'
       //$keyword == 'xl12'
-      if(substr($keyword, 0,2) == 'xl') {
+      $check_keyword = substr($keyword, 0,2); 
+      if($check_keyword == 'xl' || $check_keyword == 'sl') {
         $offday = (int) substr($keyword, 2,2);
         if(!is_numeric($offday)){
           $offday = 0;
         }
-
-        $url = 'http://www.ximalaya.com/4816433/album/247856';
-        $html = file_get_html($url);
+        $urls = array(
+          'xl' => 'http://www.ximalaya.com/4816433/album/247856',
+          'sl' => 'http://www.ximalaya.com/4816433/album/253230',
+          );
+        $html = file_get_html($urls[$check_keyword]);
         foreach($html->find('.album_soundlist  li') as $e){
           $audio[] =  $e->sound_id;
           // break;
@@ -154,7 +221,7 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
         $date = "同步更新，日期可能会超强或~";//date("n月d日",time()-$offday*86400);
         $desc = "公众号:永不止息 ".$date;
         //group5/M02/17/57/wKgDtVN8YA6yootYAAV5Hte41ho003.mp3
-        $wechatObj->music('【xl】'.str_replace('.wav', '', $audio['title']), $desc, $musicurl, $hgmusicurl)->reply();
+        $wechatObj->music("【".$check_keyword."】".str_replace('.wav', '', $audio['title']), $desc, $musicurl, $hgmusicurl)->reply();
           exit;
 
       }
@@ -163,7 +230,7 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
           $reply = _mp_node_create($keyword);
           $wechatObj->text($reply)->reply();
       }
-      if ($check_keyword == '祷告' || $check_keyword == '代祷') {
+      if ($check_keyword == '良友') {
           // $reply = _mp_node_create($keyword);
             //201+您想说的话
               if(strlen($keyword) < 10 ) {
@@ -171,6 +238,25 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
               }else{
                 $mp_service_records = mp_service_get_record($FromUserName);
                 if($mp_service_records['last_cmd'] == $check_keyword) {
+                  $contentStr = "每天只需发布一条信息，请明天再来吧！\n回复【31】听听广播吧！";
+                }else{
+                  mp_service_update_cmd($check_keyword,$FromUserName,$service_uid);
+                  $wechat_user_info = mp_service_get_user_info($wechatObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid);
+                  wx_comment('520',$keyword,$wechat_user_info);
+                  $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]\n->http://t.cn/RvHK735 \n如需帮助，请添加小永微信:\n <a href='weixin://contacts/profile/yongbuzhixi_love'>649294139</a>\n".$notice;
+                }
+              }
+              # code...
+          $wechatObj->text($contentStr)->reply();
+      }
+      if ($check_keyword == '祷告' || $check_keyword == '代祷') {
+          // $reply = _mp_node_create($keyword);
+            //201+您想说的话
+              if(strlen($keyword) < 10 ) {
+                $contentStr = $check_keyword."内容不能少于10字！";
+              }else{
+                $mp_service_records = mp_service_get_record($FromUserName);
+                if(0&&$mp_service_records['last_cmd'] == $check_keyword) {
                   $contentStr = "每天只需发布一条信息，请明天再来吧！\n回复【31】听听广播吧！";
                 }else{
                   mp_service_update_cmd($check_keyword,$FromUserName,$service_uid);
@@ -205,11 +291,9 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
         }
       }
 
-      watchdog('keyword', $keyword, array(), WATCHDOG_NOTICE, 'link');
-      
       module_load_include('inc', 'mp_service', 'swty');
-      wx_swty_resource_response($wechatObj,$keyword) 
-
+      
+      wx_swty_resource_response($wechatObj,$keyword);
 ////////////////////////////////////////////////////////////////////////
       $menu['31'] = "
       【i r】i-radio爱广播
@@ -248,7 +332,9 @@ function mp_service_response($service_uid = 172, $wx_mp_id = 'gh_b945c807e7ec') 
       module_load_include('inc', 'mp_service', 'liangyou');
       $radio_list = liangyou_audio_list();
       watchdog('$service_uid2', $service_uid, array(), WATCHDOG_NOTICE, 'link');
-      liangyou_audio_respond($wechatObj,$keyword,$radio_list);////////////////////////////////////////////////////////////////////////
+      liangyou_audio_respond($wechatObj,$keyword,$radio_list);
+      
+////////////////////////////////////////////////////////////////////////
 
       switch ($keyword) {
         case '0':     
@@ -1025,7 +1111,7 @@ function mp_service_get_user_info($wechatObj,$account='1',$password='2',$mp_uid=
     'account'=>$account,
     'password'=>$password,
     'datapath'=>DATA_COOKIE_PATH,
-      'debug'=>FALSE,
+      'debug'=>TRUE,
       'logcallback'=>'logdebug' 
   );
   $wechat = new Wechatext($options);
@@ -1048,7 +1134,7 @@ function mp_service_get_user_info($wechatObj,$account='1',$password='2',$mp_uid=
 function mp_service_update_user_info($wechatObj,$account='1',$password='2',$mp_uid='1') {
   $FromUserName = $wechatObj->getRev()->getRevFrom();
   $res = mp_service_get_record($FromUserName);
-  if($res['last_cmd'] == 'update_contact_info') return $res;
+  if( !empty($res['contact_info'])) return $res;
 
   module_load_include('inc', 'mp_service', 'config');  
   $options = array(
@@ -1263,6 +1349,24 @@ function mp_service_update_cmd($last_cmd,$FromUserName,$service_uid) {
     ->condition('mp_uid', $service_uid)
     ->execute();
 }
+/**
+ * $wechat_user_info
+ Array
+(
+    [subscribe] => 1
+    [openid] => owzhjuLh3OkTPbhgn5CaG09YXxHE
+    [nickname] => 天空蔚蓝
+    [sex] => 1
+    [language] => zh_CN
+    [city] => 朝阳
+    [province] => 北京
+    [country] => 中国
+    [headimgurl] => http://wx.qlogo.cn/mmopen/PiajxSqBRaEKpjTUkUvbSvHeUyjQO47Mg8uZRr51qBDYO0z6Bj24JxIibwicXOqd3lhSvshUqaj3z9zzuR6hcDB2Q/0
+    [subscribe_time] => 1407801187
+    [unionid] => o2T-ljnxRQRqmsLUfABb0aX-5e6E
+    [remark] => 
+)
+ */
 function wx_comment($nid,$keyword,$wechat_user_info=array()) {//,
   ///////
   // watchdog('wx_comment-wechat_user_info', '<pre>'.print_r($wechat_user_info,true), array(), WATCHDOG_NOTICE, 'link');
@@ -1273,9 +1377,10 @@ function wx_comment($nid,$keyword,$wechat_user_info=array()) {//,
                   $comment->pid = 0; // parent comment id, 0 if none 
                   $comment->uid = 0; // user's id, who left the comment
                   
-                  $comment->mail = isset($wechat_user_info['contact_info']['fake_id'])?$wechat_user_info['contact_info']['fake_id'].'@yongbuzhixi.com':'anno@duoenjia.com';// // user's email wechat_user_info
+                  $comment->mail = isset($wechat_user_info['openid'])?$wechat_user_info['openid'].'@yongbuzhixi.com':'anno@duoenjia.com';// // user's email wechat_user_info
                   //a:10:{s:7:"fake_id";i:2553430760;s:9:"nick_name";s:6:"麦青";s:9:"user_name";s:10:"maiqing-py";s:9:"signature";s:31:"在心中修篱种菊..........";s:4:"city";s:6:"昆明";s:8:"province";s:6:"云南";s:7:"country";s:6:"中国";s:6:"gender";i:2;s:11:"remark_name";s:0:"";s:8:"group_id";i:108;}
-                  $comment->name = isset($wechat_user_info['contact_info']['nick_name'])?$wechat_user_info['contact_info']['nick_name']:'微信用户';//; // If user is authenticated you can omit this field, it will be auto-populated, if the user is anonymous and you want to name him somehow, input his name here
+
+                  $comment->name = isset($wechat_user_info['nickname'])?$wechat_user_info['nickname']:'微信用户';//; // If user is authenticated you can omit this field, it will be auto-populated, if the user is anonymous and you want to name him somehow, input his name here
                   // $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
                   $comment->hostname = $_SERVER['REMOTE_ADDR'] ;// OPTIONAL. You can log poster's ip here
                   $comment->created = time(); // OPTIONAL. You can set any time you want here. Useful for backdated comments creation.
