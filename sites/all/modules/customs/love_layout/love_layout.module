@@ -321,38 +321,7 @@ function love_layout_menu() {
   );
   return $items;
 }
-/**
- * Implements hook_user_view().
- * @see statuses_user_view()
- */
-function _love_statuses_user_view($account) {
-  $items = array();
 
-  if (variable_get('statuses_profile', 1)) {
-    $account = user_load($account);
-    $value = theme('statuses_form_display', array('recipient' => $account, 'type' => 'user'));
-    // Don't show this section if there's nothing there or the user doesn't have permission to see it.
-    if (empty($value)) {
-      return;
-    }
-    if (!isset($account->content['statuses'])) {
-      $account->content['statuses'] = array();
-    }
-    $account->content['statuses'] += array(
-      '#type' => 'user_profile_category',
-      '#attributes' => array('class' => array('statuses-profile-category')),
-      '#weight' => -5,
-      '#title' => t('Messages'),
-    );
-    $account->content['statuses']['status'] = array(
-      '#type' => 'user_profile_item',
-      '#title' => '',
-      '#markup' => $value,
-      '#attributes' => array('class' => array('statuses profile')),
-    );
-    return $account->content['statuses'];
-  }
-}
 //$value = theme('statuses_form_display', array('recipient' => $account, 'type' => 'user'));
 function love_layout_menu_alter(&$items) {
 
@@ -368,19 +337,10 @@ function love_layout_menu_alter(&$items) {
   //$items['messages/recent']['title callback'] = 'privatemsg_title_callback_alter';
 
 
-  $items['user']['title'] = t('Myspace');
-  $items['user']['menu_name'] = 'love';
-  $items['user']['access callback'] = 'user_is_logged_in';
-
   $items['publish/photo'] = $items['node/add/photo'];
   $items['publish/photo']['title'] = t('上传相片');
   $items['publish/photo']['menu_name'] = 'love';
 
-  $items['invite/others'] = $items['invite'];
-  
-  $items['invite/others']['title'] = t('邀请熟人');
-  $items['invite/others']['menu_name'] = 'love';
-  //$items['invite/others']['delivery callback'] = 'ajax_deliver';
 
   $items['relationships/my'] = $items['relationships'];
   $items['relationships/my']['menu_name'] = 'love';
@@ -441,7 +401,7 @@ function love_layout_preprocess_page(&$variables) {
   //module_load_include('inc', 'love_layout', 'love_layout.customs'); 
   module_load_include('inc', 'node', 'node.pages'); 
   module_load_include('inc', 'love_layout', 'love_layout.customs');  
-  $variables['add_photo'] = _node_add4love('photo');
+  // $variables['add_photo'] = _node_add4love('photo');
   //feedback of webform.
   $node = node_load(19);
   $variables['feedback'] = _node_page_view4love($node);
@@ -707,7 +667,7 @@ function love_layout_views_pre_build(&$view) {
   if ($view->name == 'status' && $view->current_display == 'page_status_all') {
     module_load_include('inc', 'node', 'node.pages'); 
     module_load_include('inc', 'love_layout', 'love_layout.customs');  
-    $form['add_status'] = _node_add4love('status');
+    // $form['add_status'] = _node_add4love('status');
     $view->attachment_before = drupal_render($form['add_status']);
   }
 
