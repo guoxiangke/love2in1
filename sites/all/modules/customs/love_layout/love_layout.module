@@ -448,7 +448,7 @@ function love_layout_preprocess_page(&$variables) {
 
   //$remaining_invites = invite_get_remaining_invites($user);
   global $user;
-  if (invite_get_remaining_invites($user)) {
+  if (module_exists('invite') && invite_get_remaining_invites($user)) {
     $variables['invite_form'] = drupal_get_form('invite_form');
   }
   
