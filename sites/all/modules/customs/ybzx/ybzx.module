@@ -5,13 +5,6 @@
 function ybzx_block_info() {
 	$blocks = array();
   //Introduce of this sites on user/* page .when not login.
-  $blocks['video_endian'] = array(
-    'info' => t('video_endian'),
-    'cache' => DRUPAL_NO_CACHE, //to be confirmed
-    'region' => 'content',
-    'visibility' => BLOCK_VISIBILITY_LISTED,
-    // 'pages' => 'node/371',
-  );
   $blocks['love_group_index'] = array(
     'info' => t('love_group_index'),
     'cache' => DRUPAL_NO_CACHE, //to be confirmed
@@ -39,13 +32,6 @@ function ybzx_block_info() {
     'region' => 'content',
     'visibility' => BLOCK_VISIBILITY_LISTED,
     'pages' => 'node/2',
-  );
-  $blocks['video_endian_comments'] = array(
-    'info' => t('video_endian_comments'),
-    'cache' => DRUPAL_NO_CACHE, //to be confirmed
-    'region' => 'content',
-    'visibility' => BLOCK_VISIBILITY_LISTED,
-    // 'pages' => 'node/371',
   );
   return $blocks;
 }
@@ -108,30 +94,6 @@ function ybzx_block_view($delta = '') {
   <p>爱是互相激励、共同成长，并且需要公众见证、公开交往，接受监督的，让更多的肢体在婚恋交友，及组建家庭上彰显神的荣耀。</p></div>
 </div> ';
       break;
-  	case 'video_endian':
-  		$html = file_get_html('http://v.tudou.com/_114352882/');
-			  //get title $('[code]').attr('code')
-			// $Title = trim($html->find('[code]', 0)->plaintext);
-			// $Title = str_replace('查看','',$Title);
-			// $Url =' http://www.tudou.com/programs/view/'.$html->find('[code]', 0)->attr['code'];
-			$play_code = $html->find('[code]', 0)->attr['code'];
-      $block['subject'] = NULL;//t('User info')
-      $block['content'] = '<embed src="http://www.tudou.com/v/'.$play_code.'/&autoPlay=false/v.swf" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" wmode="opaque" width="480" height="400"></embed>';
-  		break;
-  	case 'video_endian_comments':
-			$html = file_get_html('http://v.tudou.com/_114352882/');
-			  //get title $('[code]').attr('code')
-			$Title = trim($html->find('[code]', 0)->plaintext);
-			$Title = str_replace('查看','',$Title);
-			// $Url =' http://www.tudou.com/programs/view/'.$html->find('[code]', 0)->attr['code'];
-			drupal_set_title($Title);
-			$play_code = $html->find('[code]', 0)->attr['code'];
-      $block['subject'] = NULL;//t('User info')
-      $block['content'] = '<div style="overflow: hidden; margin: 15px auto; max-width: 671px;">
-      <iframe scrolling="no" src="http://www.tudou.com/programs/view/'.$play_code.'" style="border: 0px none; margin-left: 0px; height: 2354px; margin-top: -853px; width: 926px;">
-      </iframe>
-      </div>';
-  		break;
   	
   	default:
   		# code...
@@ -238,3 +200,6 @@ function ybzx_get_nodes($content_type = 'article', $counts = 1, $type = 'news') 
     }
     return $$type;
 }
+///////////////////////////////////////////////
+//////////////  LOVE2in1 begin  ///////////////
+///////////////////////////////////////////////
