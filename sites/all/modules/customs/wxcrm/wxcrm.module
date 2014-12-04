@@ -1,0 +1,62 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function wxcrm_menu() {
+  /*
+   *$items['blog'] = array(
+   *  'title' => 'blogs',
+   *  'page callback' => 'blog_page',
+   *  'access arguments' => array('access content'),
+   *  'type' => MENU_SUGGESTED_ITEM,
+   *);
+   */
+  //http://url.com/wxcrm/1/wxid
+  $items['wxcrm/%/%'] = array(
+    'title' => 'valid&response',
+    'page callback' => 'wxcrm_response',
+    'page arguments' => array(1,2),//$user->id,$AppID
+  	'file' => 'wxcrm.pages.php',
+    'access callback' => TRUE,
+
+  );
+  $items['user/%user/wxcrm'] = array(
+    'title' => 'WechatCRM',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wxcrm_settings_form'),
+    'access callback' => 'user_is_logged_in',
+    // 'access arguments' => array('administer site configuration'),
+    'file' => 'wxcrm.pages.php',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+/**
+ * init wechat object
+ */
+function _wechatObj_init($uid=NULL,$AppID=NULL){
+	if(!$uid){
+		global $user;
+		$uid = $user->uid;
+	}
+	//0 官方API 
+	//1 非认证用户，模拟登陆使用部分高级权限
+	//2 认证用户，提供APPID 
+  $weObj = &drupal_static(__FUNCTION__);
+  if(!isset($weObj)){
+		module_load_include('php', 'wxcrm', 'sdk/wechat.class');
+	  $options = array(
+				'token'=>variable_get('wxcrm_token_'.$uid, variable_get('wxcrm_token_'.$uid,NULL)), //填写你设定的key
+				'encodingaeskey'=>variable_get('wxcrm_encode_'.$uid, variable_get('wxcrm_encode_'.$uid,NULL)), //填写加密用的EncodingAESKey
+				'appid'=>variable_get('wxcrm_appid_'.$uid, variable_get('wxcrm_appid_'.$uid,NULL)), //填写高级调用功能的app id
+				'appsecret'=>variable_get('wxcrm_appsecret_'.$uid, variable_get('wxcrm_appsecret_'.$uid,NULL)), //填写高级调用功能的密钥
+				// 'partnerid'=>variable_get('wxcrm_partnerid_'.$uid, variable_get('wxcrm_partnerid_'.$uid,'888')), //财付通商户身份标识
+				// 'partnerkey'=>variable_get('wxcrm_partnerkey_'.$uid, variable_get('wxcrm_partnerkey_'.$uid,'')), //财付通商户权限密钥Key
+				// 'paysignkey'=>variable_get('wxcrm_paysignkey_'.$uid, variable_get('wxcrm_paysignkey_'.$uid,'')), //商户签名密钥Key
+		);
+		$weObj = new Wechat($options);
+  }
+  return $weObj;
+}
