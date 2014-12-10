@@ -203,3 +203,216 @@ function ybzx_get_nodes($content_type = 'article', $counts = 1, $type = 'news') 
 ///////////////////////////////////////////////
 //////////////  LOVE2in1 begin  ///////////////
 ///////////////////////////////////////////////
+
+///////////////////报名参加文字修改begin/////////////////////////////
+/**
+ * Implement hook_field_formatter_info().
+ */
+function ybzx_field_formatter_info() {
+  return array(
+    'og_group_subscribe' => array(
+      'label' => t('OG subscribe link'),
+      'field types' => array('list_boolean'),
+      'settings' => array(
+        'field_name' => FALSE,
+      ),
+    ),
+    'og_list_default' => array(
+      'label' => t('OG audience list'),
+      'field types' => array('entityreference'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function ybzx_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  global $user;
+  $settings = $display['settings'];
+
+  switch ($display['type']) {
+    case 'og_group_subscribe':
+      $account = clone $user;
+      if (!og_is_group($entity_type, $entity)) {
+        return;
+      }
+
+      if (!empty($entity->uid) && ($entity->uid == $account->uid)) {
+        // User is the group manager.
+        $element[0] = array(
+          '#type' => 'html_tag',
+          '#tag' => 'span',
+          '#attributes' => array('title' => '您是活动发起人', 'class' => 'group manager'),
+          '#value' => '您是活动发起人',
+        );
+
+        return $element;
+      }
+
+      list($id,, $bundle) = entity_extract_ids($entity_type, $entity);
+      if (og_is_member($entity_type, $id, 'user', $account, array(OG_STATE_ACTIVE, OG_STATE_PENDING))) {
+        if (og_user_access($entity_type, $id, 'unsubscribe', $account)) {
+          $links['title'] = t('Unsubscribe from group');
+          $links['href'] = "group/$entity_type/$id/unsubscribe";
+          $links['class'] = 'group unsubscribe';
+        }
+      }
+      else {
+        if (og_is_member($entity_type, $id, 'user', $account, array(OG_STATE_BLOCKED))) {
+          // If user is blocked, they should not be able to apply for
+          // membership.
+          return;
+        }
+
+        // Check if user can subscribe to the field.
+        if (empty($settings['field_name']) && $audience_field_name = og_get_best_group_audience_field('user', $account, $entity_type, $bundle)) {
+          $settings['field_name'] = $audience_field_name;
+        }
+        if (!$settings['field_name']) {
+          return;
+        }
+
+        $field_info = field_info_field($settings['field_name']);
+
+        // Check if entity is referencable.
+        if ($field_info['settings']['target_type'] != $entity_type) {
+          // Group type doesn't match.
+          return;
+        }
+        if (!empty($field_info['settings']['handler_settings']['target_bundles']) && !in_array($bundle, $field_info['settings']['handler_settings']['target_bundles'])) {
+          // Bundles don't match.
+          return;
+        }
+
+        if (!og_check_field_cardinality('user', $account, $settings['field_name'])) {
+          $element[0] = array(
+            '#type' => 'html_tag',
+            '#tag' => 'span',
+            '#attributes' => array('title' => format_plural($field_info['cardinality'], 'You are already registered to another group', 'You are already registered to @count groups'), 'class' => 'group other'),
+            '#value' => format_plural($field_info['cardinality'], 'You are already registered to another group', 'You are already registered to @count groups'),
+          );
+          return $element;
+        }
+
+        $url = "group/$entity_type/$id/subscribe";
+        if ($settings['field_name']) {
+          $url .= '/' . $settings['field_name'];
+        }
+
+        if (og_user_access($entity_type, $id, 'subscribe without approval', $account)) {
+          $links['title'] = t('Subscribe to group');
+          $links['class'] = 'group subscribe';
+          if ($account->uid) {
+            $links['href'] = $url;
+          }
+          else {
+            $links['href'] = 'user/login';
+            $links['options'] = array('query' => array('destination' => $url));
+          }
+        }
+        elseif (og_user_access($entity_type, $id, 'subscribe')) {
+          $links['title'] = t('Request group membership');
+          if($entity->type == 'event') $links['title'] = '报名参加';
+          $links['class'] = 'group subscribe request';
+          if ($account->uid) {
+            $links['href'] = $url;
+          }
+          else {
+            $links['href'] = 'user/login';
+            $links['options'] = array('query' => array('destination' => $url));
+          }
+        }
+        else {
+          $element[0] = array(
+            '#type' => 'html_tag',
+            '#tag' => 'span',
+            '#attributes' => array('title' => t('This is a closed group. Only a group administrator can add you.'), 'class' => 'group closed'),
+            '#value' => t('This is a closed group. Only a group administrator can add you.'),
+          );
+
+          return $element;
+        }
+      }
+
+      if (!empty($links['title'])) {
+        $links += array('options' => array('attributes' => array('title' => $links['title'], 'class' => array($links['class']))));
+        $element[0] = array(
+          '#type' => 'link',
+          '#title' => $links['title'],
+          '#href' => $links['href'],
+          '#options' => $links['options'],
+        );
+        return $element;
+      }
+      // User didn't have permissions.
+      break;
+
+    case 'og_list_default':
+      $accessible_ids = array();
+      $private = FALSE;
+      $wrapper = entity_metadata_wrapper($entity_type, $entity);
+      $field_name = $field['field_name'];
+      if (!$wrapper->{$field_name}->value()) {
+        return;
+      }
+      if ($field['cardinality'] == 1) {
+        // Single-value field.
+        if ($wrapper->{$field_name}->entityAccess('view')) {
+          $id = $wrapper->{$field_name}->getIdentifier();
+          $accessible_ids[$id] = TRUE;
+        }
+        else {
+          $private = TRUE;
+        }
+      }
+      else {
+        // Multi-value field.
+        foreach ($wrapper->{$field_name} as $wrapper_field) {
+          $id = $wrapper_field->value(array('identifier' => TRUE));
+          if ($wrapper_field->entityAccess('view')) {
+            $accessible_ids[$id] = TRUE;
+          }
+          else {
+            $private = TRUE;
+          }
+        }
+      }
+
+      if ($entity_type == 'user') {
+        // Show only the groups a user is active in.
+        foreach ($wrapper->{$field_name . '__og_membership'}->value() as $og_membership) {
+          if ($og_membership->state != OG_STATE_ACTIVE) {
+            unset($accessible_ids[$og_membership->gid]);
+          }
+        }
+      }
+      $group_type = $field['settings']['target_type'];
+      $accessible_entity = entity_load($group_type, array_keys($accessible_ids));
+      $element = array();
+      foreach ($items as $delta => $item) {
+        if (!empty($accessible_ids[$item['target_id']]) && !empty($accessible_entity[$item['target_id']])) {
+          $wrapper = entity_metadata_wrapper($group_type, $item['target_id']);
+          $element[$delta] = array(
+            '#type' => 'link',
+            '#title' => $wrapper->label(),
+            '#href' => $wrapper->url->value(),
+            // Add the group type and group ID, so it's easier for implementing
+            // modules to extend the formatter.
+            '#group_type' => $group_type,
+            '#gid' => $wrapper->getIdentifier(),
+          );
+        }
+      }
+      if ($private) {
+        $count = count($element);
+        $delta = $count == 0 ? 0 : $count + 1;
+        $element[$delta] = array('#markup' => '- ' . t('Private group') . ' -');
+      }
+
+      return $element;
+  }
+}
+
+///////////////////报名参加文字修改end/////////////////////////////

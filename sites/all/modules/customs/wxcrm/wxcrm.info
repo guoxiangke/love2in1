@@ -1,3 +1,4 @@
 name = Wechat CRM
 description = CRM for Wechat.
 core = 7.x
+package = "A-DEV"

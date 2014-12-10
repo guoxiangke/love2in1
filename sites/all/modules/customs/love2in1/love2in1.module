@@ -157,10 +157,10 @@ function love2in1_wechat_message($weObj){
                 $new_msg_id = love2in1_new_message($fields);
                 if($new_msg_id){
                   $weObj->text('您的私信已经成功发送给了'.$old_message['sendfrom'].'！
-点击“查看私信”，查看其他人给您的私信
-回复“建议 +内容”，您可以给我们提建议哦！
-点击“365”，
-点击“听”')->reply();
+                    点击“查看私信”，查看其他人给您的私信
+                    回复“建议 +内容”，您可以给我们提建议哦！
+                    点击“365”，
+                    点击“听”')->reply();
                   mp_service_update_cmd('qx',$FromUserName,$service_uid);
                 }else{
                    $weObj->text("发送失败！\n回复建议+内容，提出意见！")->reply();
@@ -223,9 +223,10 @@ function love2in1_wechat_message($weObj){
           }
 
           if($event['key'] == 'GET_PRAY' || $event['key'] == 'pray'){
-            $nid = '520';
+            $nid = '1273';
             $comments = comment_get_recent_by_nid($nid,5);
             $contentStr = '';
+            $get_comments = array();
             foreach ($comments as $key => $comment) {
               $contentStr .= "●【".($key+1)."】".$comment->subject."\n";
               //“祷告+ ".$comment->cid."+祷告内容 ”为他代祷
@@ -233,7 +234,8 @@ function love2in1_wechat_message($weObj){
               # code...（代祷事项ID为他祷告）
             } 
             $contentStr .= "\n回复1~5为他祷告！";
-            mp_service_update_cmd('GET_PRAY：'.implode(',', $get_comments),$FromUserName,$service_uid);
+            if(count($get_comments) == 0) $weObj->text("暂无内容！")->reply();
+              mp_service_update_cmd('GET_PRAY：'.implode(',', $get_comments),$FromUserName,$service_uid);
             $img = array(
               'Title'=>'祷告墙',
               'Description'=>'提前2:1 我劝你，第一要为万人恳求、祷告、代求、祝谢。 雅5:16 所以你们要彼此认罪，互相代求，使你们可以得医治。',
@@ -359,7 +361,7 @@ function love2in1_get_messages($nickname,$rang = 9){
       $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
         ->fields('p')
         ->condition('sendto',$nickname)
-        ->condition('ifread',0) //unreader
+        // ->condition('ifread',0) //unreader
         ->condition('status','send')
         ->condition('to_del','1','!=')
         // ->condition('from_del','1','!=')
@@ -369,6 +371,7 @@ function love2in1_get_messages($nickname,$rang = 9){
         ->fetchAll();
       return $result;
 }
+
 function love2in1_get_admin_messages($mp_member,$rang = 3){
       
       $member = love2in1_get_memeber_by_id($mp_member['uid']);
@@ -402,6 +405,7 @@ function love2in1_admin_message_isread($id,$member_id){
     ->fetchAll();
   return count($result);
 }
+
 function love2in1_get_message_by_id($id){
   $result = Database::getConnection('default', 'love2in1')->select('mail', 'p')
     ->fields('p')
@@ -701,7 +705,7 @@ function wx_comment_4love2in1($nid,$keyword,$wechat_user_info=array(),$pid=0) {/
                   
                   $comment->mail = '';//isset($wechat_user_info['openid'])?$wechat_user_info['openid'].'@yongbuzhixi.com':'anno@duoenjia.com';// // user's email wechat_user_info
                   //a:10:{s:7:"fake_id";i:2553430760;s:9:"nick_name";s:6:"麦青";s:9:"user_name";s:10:"maiqing-py";s:9:"signature";s:31:"在心中修篱种菊..........";s:4:"city";s:6:"昆明";s:8:"province";s:6:"云南";s:7:"country";s:6:"中国";s:6:"gender";i:2;s:11:"remark_name";s:0:"";s:8:"group_id";i:108;}
-// $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
+                  // $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
                   $comment->name = isset($wechat_user_info['nickname'])?$wechat_user_info['nickname']:'微信用户';//; // If user is authenticated you can omit this field, it will be auto-populated, if the user is anonymous and you want to name him somehow, input his name here
                   // $comment->thread = '01/'; // OPTIONAL. If you need comments to be threaded you can fill this value. Otherwise omit it.
                   $comment->hostname = $_SERVER['REMOTE_ADDR'] ;// OPTIONAL. You can log poster's ip here
@@ -727,216 +731,3 @@ function wx_comment_4love2in1($nid,$keyword,$wechat_user_info=array(),$pid=0) {/
                       return $comment;
                   }
 }
-///////////////////报名参加文字修改begin/////////////////////////////
-/**
- * Implement hook_field_formatter_info().
- */
-function love2in1_field_formatter_info() {
-  return array(
-    'og_group_subscribe' => array(
-      'label' => t('OG subscribe link'),
-      'field types' => array('list_boolean'),
-      'settings' => array(
-        'field_name' => FALSE,
-      ),
-    ),
-    'og_list_default' => array(
-      'label' => t('OG audience list'),
-      'field types' => array('entityreference'),
-    ),
-  );
-}
-
-
-/**
- * Implements hook_field_formatter_view().
- */
-function love2in1_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
-  global $user;
-
-  $settings = $display['settings'];
-
-  switch ($display['type']) {
-    case 'og_group_subscribe':
-      $account = clone $user;
-      if (!og_is_group($entity_type, $entity)) {
-        return;
-      }
-
-      if (!empty($entity->uid) && ($entity->uid == $account->uid)) {
-        // User is the group manager.
-        $element[0] = array(
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => array('title' => t('You are the group manager'), 'class' => 'group manager'),
-          '#value' => t('You are the group manager'),
-        );
-
-        return $element;
-      }
-
-      list($id,, $bundle) = entity_extract_ids($entity_type, $entity);
-      if (og_is_member($entity_type, $id, 'user', $account, array(OG_STATE_ACTIVE, OG_STATE_PENDING))) {
-        if (og_user_access($entity_type, $id, 'unsubscribe', $account)) {
-          $links['title'] = t('Unsubscribe from group');
-          $links['href'] = "group/$entity_type/$id/unsubscribe";
-          $links['class'] = 'group unsubscribe';
-        }
-      }
-      else {
-        if (og_is_member($entity_type, $id, 'user', $account, array(OG_STATE_BLOCKED))) {
-          // If user is blocked, they should not be able to apply for
-          // membership.
-          return;
-        }
-
-        // Check if user can subscribe to the field.
-        if (empty($settings['field_name']) && $audience_field_name = og_get_best_group_audience_field('user', $account, $entity_type, $bundle)) {
-          $settings['field_name'] = $audience_field_name;
-        }
-        if (!$settings['field_name']) {
-          return;
-        }
-
-        $field_info = field_info_field($settings['field_name']);
-
-        // Check if entity is referencable.
-        if ($field_info['settings']['target_type'] != $entity_type) {
-          // Group type doesn't match.
-          return;
-        }
-        if (!empty($field_info['settings']['handler_settings']['target_bundles']) && !in_array($bundle, $field_info['settings']['handler_settings']['target_bundles'])) {
-          // Bundles don't match.
-          return;
-        }
-
-        if (!og_check_field_cardinality('user', $account, $settings['field_name'])) {
-          $element[0] = array(
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => array('title' => format_plural($field_info['cardinality'], 'You are already registered to another group', 'You are already registered to @count groups'), 'class' => 'group other'),
-            '#value' => format_plural($field_info['cardinality'], 'You are already registered to another group', 'You are already registered to @count groups'),
-          );
-          return $element;
-        }
-
-        $url = "group/$entity_type/$id/subscribe";
-        if ($settings['field_name']) {
-          $url .= '/' . $settings['field_name'];
-        }
-
-        if (og_user_access($entity_type, $id, 'subscribe without approval', $account)) {
-          $links['title'] = t('Subscribe to group');
-          $links['class'] = 'group subscribe';
-          if ($account->uid) {
-            $links['href'] = $url;
-          }
-          else {
-            $links['href'] = 'user/login';
-            $links['options'] = array('query' => array('destination' => $url));
-          }
-        }
-        elseif (og_user_access($entity_type, $id, 'subscribe')) {
-          $links['title'] = t('Request group membership');
-          if($entity->type == 'event') $links['title'] = '报名参加';
-          $links['class'] = 'group subscribe request';
-          if ($account->uid) {
-            $links['href'] = $url;
-          }
-          else {
-            $links['href'] = 'user/login';
-            $links['options'] = array('query' => array('destination' => $url));
-          }
-        }
-        else {
-          $element[0] = array(
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => array('title' => t('This is a closed group. Only a group administrator can add you.'), 'class' => 'group closed'),
-            '#value' => t('This is a closed group. Only a group administrator can add you.'),
-          );
-
-          return $element;
-        }
-      }
-
-      if (!empty($links['title'])) {
-        $links += array('options' => array('attributes' => array('title' => $links['title'], 'class' => array($links['class']))));
-        $element[0] = array(
-          '#type' => 'link',
-          '#title' => $links['title'],
-          '#href' => $links['href'],
-          '#options' => $links['options'],
-        );
-        return $element;
-      }
-      // User didn't have permissions.
-      break;
-
-    case 'og_list_default':
-      $accessible_ids = array();
-      $private = FALSE;
-      $wrapper = entity_metadata_wrapper($entity_type, $entity);
-      $field_name = $field['field_name'];
-      if (!$wrapper->{$field_name}->value()) {
-        return;
-      }
-      if ($field['cardinality'] == 1) {
-        // Single-value field.
-        if ($wrapper->{$field_name}->entityAccess('view')) {
-          $id = $wrapper->{$field_name}->getIdentifier();
-          $accessible_ids[$id] = TRUE;
-        }
-        else {
-          $private = TRUE;
-        }
-      }
-      else {
-        // Multi-value field.
-        foreach ($wrapper->{$field_name} as $wrapper_field) {
-          $id = $wrapper_field->value(array('identifier' => TRUE));
-          if ($wrapper_field->entityAccess('view')) {
-            $accessible_ids[$id] = TRUE;
-          }
-          else {
-            $private = TRUE;
-          }
-        }
-      }
-
-      if ($entity_type == 'user') {
-        // Show only the groups a user is active in.
-        foreach ($wrapper->{$field_name . '__og_membership'}->value() as $og_membership) {
-          if ($og_membership->state != OG_STATE_ACTIVE) {
-            unset($accessible_ids[$og_membership->gid]);
-          }
-        }
-      }
-      $group_type = $field['settings']['target_type'];
-      $accessible_entity = entity_load($group_type, array_keys($accessible_ids));
-      $element = array();
-      foreach ($items as $delta => $item) {
-        if (!empty($accessible_ids[$item['target_id']]) && !empty($accessible_entity[$item['target_id']])) {
-          $wrapper = entity_metadata_wrapper($group_type, $item['target_id']);
-          $element[$delta] = array(
-            '#type' => 'link',
-            '#title' => $wrapper->label(),
-            '#href' => $wrapper->url->value(),
-            // Add the group type and group ID, so it's easier for implementing
-            // modules to extend the formatter.
-            '#group_type' => $group_type,
-            '#gid' => $wrapper->getIdentifier(),
-          );
-        }
-      }
-      if ($private) {
-        $count = count($element);
-        $delta = $count == 0 ? 0 : $count + 1;
-        $element[$delta] = array('#markup' => '- ' . t('Private group') . ' -');
-      }
-
-      return $element;
-  }
-}
-
-///////////////////报名参加文字修改end/////////////////////////////

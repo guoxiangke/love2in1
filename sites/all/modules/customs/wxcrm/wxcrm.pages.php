@@ -11,8 +11,8 @@ function wxcrm_response($uid,$AppID){
   $weObj = _wechatObj_init($uid,$AppID);
   $weObj->valid();
   $type = $weObj->getRev()->getRevType();
-  // module_invoke_all('wxcrm_message', $weObj);
-  // module_invoke_all('wxcrm_message_alter', $weObj);
+  module_invoke_all('wxcrm_message', $weObj);
+  module_invoke_all('wxcrm_message_alter', $weObj);
   if(!is_array($weObj->Message(''))){ // add default option
     $type = $weObj->getRev()->getRevType();
     switch($type) {

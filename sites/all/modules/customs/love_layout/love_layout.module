@@ -36,6 +36,13 @@ function love_layout_block_info() {
     'info' =>t('love_user_timeline'),
     'region' => 'content',
   );
+
+  $blocks['love_qa_block'] = array(
+    'info' =>t('QA Add A New Question'),
+    'region' => 'sidebar_first',
+    'visibility' => BLOCK_VISIBILITY_LISTED,
+    'pages' =>'questions\nquestions/*',
+  );
   return $blocks;
 }
 /**
@@ -73,6 +80,10 @@ function love_layout_block_view($delta = '') {
     case 'love_user_timeline':
       $block['subject'] = t('时光轴');
       $block['content'] = love_user_timeline();
+      break;
+    case 'love_qa_block':
+      $block['subject'] = NULL;
+      $block['content'] = love_block_qa_add();
       break;
   }
   return $block;

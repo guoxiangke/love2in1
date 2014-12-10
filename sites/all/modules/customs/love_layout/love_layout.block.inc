@@ -421,4 +421,12 @@ function love_user_timeline() {
   //   <div id="grad_bottom"></div>
   return '镌刻您的真爱之旅<br/>时间就像一条长长的线，空间就像一个大大的圆，我们的故事发生在它们中间～'.$output;
 }
+
+function love_block_qa_add(){
+  $html = l(t('Ask Question'), 'user/login', array('query'=>array('destination'=>'node/add/question'),'attributes'=>array('class'=>'btn btn-primary btn-lg btn-block')));
+  if(user_is_logged_in()){
+    $html = l(t('Ask Question'), 'node/add/question', array('attributes'=>array('class'=>'btn btn-primary btn-lg btn-block')));
+  }
+  return $html;
+}
 ?>
