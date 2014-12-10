@@ -42,17 +42,19 @@ if(arg(0) == 'user'){
 }
 $account = $account->uid?$account:$user;
 $profile= profile2_load_by_user($account, $type_name = NULL);
-// dpm($profile);
+if(!$profile) drupal_goto('user/'.$account->uid.'/edit/main');
 $real_name = isset($profile['main']->field_name[LANGUAGE_NONE][0]['value'])?$profile['main']->field_name[LANGUAGE_NONE][0]['value']:$account->name;
 $sex = $profile['main']->field_sex[LANGUAGE_NONE][0]['value']?'男':'女';
 $field_birthday = $profile['main']->field_birthday[LANGUAGE_NONE][0]['value'];
+$field_birthday = strtotime($field_birthday);
 
 $field_birthday_temp = field_get_items('user', $account, 'field_birthday');
 
 if($field_birthday_temp){
 	$field_birthday = $field_birthday_temp;
+  $field_birthday = strtotime($field_birthday[0]['value']);
 }
-$field_birthday = strtotime($field_birthday);
+// dpm($field_birthday);
 $age = date('Y')-date('Y',$field_birthday);
 $marriage_status = array(
 	'1'=>'单身求交往',
