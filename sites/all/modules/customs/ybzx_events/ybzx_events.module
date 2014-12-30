@@ -3,7 +3,7 @@
 /**
  * Implement hook_field_formatter_info().
  */
-function ybzx_field_formatter_info() {
+function ybzx_event_field_formatter_info() {
   return array(
     'og_group_subscribe' => array(
       'label' => t('OG subscribe link'),
@@ -23,7 +23,7 @@ function ybzx_field_formatter_info() {
 /**
  * Implements hook_field_formatter_view().
  */
-function ybzx_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+function ybzx_event_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   global $user;
   $settings = $display['settings'];
 
