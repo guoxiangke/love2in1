@@ -29,9 +29,7 @@ body {
 	.form-item .form-required {
 	color: red;
 }
-#edit-field-sex-und .form-type-radio{
-	float: left;
-}
+
 #edit-field-sex-und{
 	clear: both;
 }
@@ -290,4 +288,9 @@ h1, .h1 {
 /**love2in1 new**/
 #block-system-main {
 	
+}
+/*temp hide*/
+
+.user-signature,.new {
+	display: none;
 }

@@ -72,7 +72,8 @@
  *
  * @ingroup themeable
  */
-$account = user_load(arg(1));
+if(NULL !=  arg(1))
+  $account = user_load(arg(1));
 global $user;
 // dpm($user);
 // $url = 'http://weixin.sogou.com/gzhjs?cb=sogou.weixin.gzhcb&openid=oIWsFt1gF4leXGYvUZd37TlFG4Ac';

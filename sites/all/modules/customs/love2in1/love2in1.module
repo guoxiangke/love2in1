@@ -4,6 +4,7 @@ function love2in1_wechat_message($weObj){
   $mp_services_config['account'] = 'love2in1@163.com';
   $mp_services_config['password'] = 'zhuaiheyi2009';
   $service_uid = '635';
+  $commentId = 1273;
   if(!is_array($weObj->Message(''))){ // add default option
     $type = $weObj->getRev()->getRevType();
     $FromUserName =  $weObj->getRev()->getRevFrom();
@@ -42,9 +43,9 @@ function love2in1_wechat_message($weObj){
             if(strlen($keyword) >= 10) {
               // $cid = $last_comments[$keyword-1];          
               //comment_add!
-              wx_comment_4love2in1('520',$keyword,$wechat_user_info,$pid);
+              wx_comment_4love2in1($commentId,$keyword,$wechat_user_info,$pid);
               $contentStr = '[微笑]代祷成功发布！谢谢！';
-              $contentStr .= "\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/520';
+              $contentStr .= "\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/'.$commentId;
 
               mp_service_update_cmd('qx',$FromUserName,$service_uid);
             }else{
@@ -78,10 +79,10 @@ function love2in1_wechat_message($weObj){
                      // watchdog('getRev', '<pre>'.print_r($weObj->getRev(),true), array(), WATCHDOG_NOTICE, 'link');
                      // $wechat_user_info = mp_service_get_user_info($weObj,$mp_services_config['account'],$mp_services_config['password'],$service_uid);
                      $wechat_user_info = $weObj->getUserInfo($weObj->getRevFrom());
-                     // wx_comment('520',$keyword,$wechat_user_info);
+                     // wx_comment($commentId,$keyword,$wechat_user_info);
                      $pid = 0;
-                     wx_comment_4love2in1('520',$keyword,$wechat_user_info,$pid);
-                     $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/520';
+                     wx_comment_4love2in1($commentId,$keyword,$wechat_user_info,$pid);
+                     $contentStr ="[微笑]".$check_keyword."信息已收到![调皮]\n点击查看". url(NULL, array('absolute' => TRUE)) . (variable_get('clean_url', 0) ? '' : '?q=').'node/'.$commentId;
                  }
              }
              # code...
@@ -258,10 +259,10 @@ function love2in1_wechat_message($weObj){
           if($event['key'] == 'GET_SONG'){
             // $news = ybzx_get_nodes($type = 'article', $counts = 1);
             // $weObj->news($news)->reply(); exit;
-            $nodes = ybzx_get_nodes($content_type = 'article', $counts = 1, $type = 'nodes');
+            $nodes = ybzx_get_nodes($content_type = 'audio', $counts = 1, $type = 'nodes');
             $title = $nodes[0]->title;
-            if(isset($nodes[0]->field_wechat_url[LANGUAGE_NONE][0]['value'])) {
-              $musicurl = $nodes[0]->field_wechat_url[LANGUAGE_NONE][0]['value'];
+            if(isset($nodes[0]->field_mp3_url[LANGUAGE_NONE][0]['value'])) {
+              $musicurl = $nodes[0]->field_mp3_url[LANGUAGE_NONE][0]['value'];
             }else{
               $uri = $nodes[0]->field_mp3[LANGUAGE_NONE][0]['uri'];
               $musicurl = file_create_url($uri);
