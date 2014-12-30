@@ -1,9 +1,10 @@
 <?php
+/**
+ * @file
+ * jcrop_fapi.module
+ */
 
-/*
- * Includes.
- */ 
-require_once 'includes/jcrop_fapi.includes.inc';    
+require_once 'includes/jcrop_fapi.includes.inc';
 
 /**
  * Implements hook_element_info().
@@ -16,10 +17,11 @@ function jcrop_fapi_element_info() {
     '#input' => TRUE,
     '#process' => array('jcrop_fapi_jcrop_image_file_process', 'jcrop_fapi_jcrop_image_cropping_process'),
     '#value_callback' => 'jcrop_fapi_jcrop_image_value',
-    '#element_validate' => array('file_managed_file_validate'), // uses managed_file validation
+    // Uses managed_file validation.
+    '#element_validate' => array('file_managed_file_validate'),
     '#pre_render' => array('jcrop_fapi_jcrop_image_pre_render'),
     '#theme' => 'file_managed_file',
-    '#theme_wrappers' => array('form_element'),   
+    '#theme_wrappers' => array('form_element'),
     '#progress_indicator' => 'throbber',
     '#progress_message' => NULL,
     '#upload_validators'  => array("file_validate_extensions" => array("png gif jpg")),
@@ -40,22 +42,22 @@ function jcrop_fapi_element_info() {
 }
 
 /**
- * Value callback
+ * Form element value callback.
  */
 function jcrop_fapi_jcrop_image_value($element, $input, $form_state) {
   // Set default value array.
   $return = array(
-      'fid' => 0,
-      'x' => 0,
-      'y' => 0,
-      'width' => 0,
-      'height' => 0,
-      'changed' => 0,
-      'origin' => 0, 
-      'state' => 'default',
-      'enforse_ratio' => 1,
-    ); 
-  
+    'fid' => 0,
+    'x' => 0,
+    'y' => 0,
+    'width' => 0,
+    'height' => 0,
+    'changed' => 0,
+    'origin' => 0,
+    'state' => 'default',
+    'enforse_ratio' => 1,
+  );
+
   // Find the current value of this field from the form state.
   $form_state_fid = $form_state['values'];
   foreach ($element['#parents'] as $parent) {
@@ -67,17 +69,16 @@ function jcrop_fapi_jcrop_image_value($element, $input, $form_state) {
   }
   elseif (is_numeric($form_state_fid)) {
     $fid = $form_state_fid;
-  }  
-  
-  // set $input['fid'] and that will be the value of the element.
+  }
+
+  // Set $input['fid'] and that will be the value of the element.
   if (isset($input) && ($input !== FALSE)) {
-    // Uploads take priority over all other values. $_FILES[]
+    // Uploads take priority over all other values. $_FILES[].
     if ($file = file_managed_file_save_upload($element)) {
       $return = array_merge($return, $input);
-
-      // Put uploaded file in both fields
+      // Put uploaded file in both fields.
       $return['fid'] = $return['origin'] = $file->fid;
-      // If file has been uploaded set state as EDIT
+      // If file has been uploaded set state as EDIT.
       $return['state'] = 'edit';
     }
     // IF $_FILES are empty - check input values.
@@ -89,15 +90,17 @@ function jcrop_fapi_jcrop_image_value($element, $input, $form_state) {
     }
   }
 
-  return $return;    
+  return $return;
 }
 
-/*
- * Default state process function. Here we adds basic elements file, upload, remove buttons.
+/**
+ * Default process callback function.
+ * 
+ * Add basic form elements: file, upload, remove buttons.
  */
 function jcrop_fapi_jcrop_image_file_process($element, &$form_state, $form) {
   _jcrop_fapi_element_state_default_process($element, $form_state, $form);
-  
+
   return $element;
 }
 
@@ -105,40 +108,36 @@ function jcrop_fapi_jcrop_image_file_process($element, &$form_state, $form) {
  * An element #process callback for the jcrop_image element.
  */
 function jcrop_fapi_jcrop_image_cropping_process($element, &$form_state, $form) {
-  $fid = isset($element['#value']['origin']) ? $element['#value']['origin'] : 0;  
+  $fid = isset($element['#value']['origin']) ? $element['#value']['origin'] : 0;
   // Set some default element properties.
   $element['#progress_indicator'] = empty($element['#progress_indicator']) ? 'none' : $element['#progress_indicator'];
   $element['#file'] = $fid ? file_load($fid) : FALSE;
   $element['#tree'] = TRUE;
-
   // Prefix and suffix used for Ajax replacement.
   $element['#prefix'] = '<div id="' . $element['#id'] . '-ajax-wrapper" >';
-  $element['#suffix'] = '</div>';   
-  
-  // Get value from form_state
+  $element['#suffix'] = '</div>';
+  // Get value from form_state.
   $value = $element['#value'];
-  
   // Process the state of the element.
   switch ($value['state']) {
-    case 'edit' :
+    case 'edit':
       _jcrop_fapi_element_state_edit_process($element, $form_state, $form);
       break;
 
-    case 'saved' :
+    case 'saved':
       _jcrop_fapi_element_state_saved_process($element, $form_state, $form);
       break;
 
     default:
       break;
-  }  
-    
+  }
   $element['#extended'] = TRUE;
-  
+
   return $element;
 }
 
-/*
- * Prerender element.
+/**
+ * Prerender element callback.
  */
 function jcrop_fapi_jcrop_image_pre_render($element) {
   // If we already have a file, we don't want to show the upload controls.
@@ -150,7 +149,7 @@ function jcrop_fapi_jcrop_image_pre_render($element) {
   else {
     $element['remove_button']['#access'] = FALSE;
   }
-  
+
   return $element;
 }
 
@@ -168,12 +167,11 @@ function jcrop_fapi_jcrop_image_file_submit($form, &$form_state) {
   $parents = $form_state['triggering_element']['#array_parents'];
   $button_key = array_pop($parents);
   $element = drupal_array_get_nested_value($form, $parents);
-  
+
   $element_value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
 
   // Process remove button.
   if ($button_key == 'remove_button') {
-    
     // Delete all files.
     if ($file = file_load($element_value['fid'])) {
       file_delete($file);
@@ -181,41 +179,40 @@ function jcrop_fapi_jcrop_image_file_submit($form, &$form_state) {
     if ($file = file_load($element_value['origin'])) {
       file_delete($file);
     }
-    
     // Delete all file ids from form_state
     $values_element = $element['#extended'] ? $element['fid'] : $element;
     drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], NULL);
     drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], NULL);
   }
-  
   // Rebuild form.
   $form_state['rebuild'] = TRUE;
 }
 
-/*
+/**
  * Submit handler for 'Save' image button.
  */
 function jcrop_fapi_jcrop_image_save_submit($form, &$form_state) {
-  
   // Get element from form array.
   $parents = $form_state['triggering_element']['#array_parents'];
-  array_pop($parents); // remove last element, button element.
+  // Remove last element, the button element.
+  array_pop($parents);
   $element = drupal_array_get_nested_value($form, $parents);
 
-  // Get values of the element from from_state values. 
+  // Get values of the element from from_state values.
   $element_value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
-  
+
   $src = file_load($element_value['origin']);
   $file_to_edit = file_copy($src, 'public://', $replace = FILE_EXISTS_RENAME);
 
   $scale = NULL;
-  
+
   // If chosen "Entire Image" option, do not crop uploaded image.
-  if ((int)$element_value['enforse_ratio'] == 2) {
+  if ((int) $element_value['enforse_ratio'] == 2) {
     $element_value = NULL;
   }
-  
-  $image = _jcrop_fapi_image_crop_resize(drupal_realpath($file_to_edit->uri), $element_value, $scale, drupal_realpath($file_to_edit->uri));
+
+  $image = _jcrop_fapi_image_crop_resize(drupal_realpath($file_to_edit->uri),
+    $element_value, $scale, drupal_realpath($file_to_edit->uri));
   if ($image) {
     $file = file_load($element_value['fid']);
 
@@ -224,77 +221,80 @@ function jcrop_fapi_jcrop_image_save_submit($form, &$form_state) {
       file_delete($file);
     }
 
-    // Update form values and input.   
+    // Update form values and input.
     $values_element = $element['#extended'] ? $element['fid'] : $element;
     drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], $file_to_edit->fid);
     drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], $file_to_edit->fid);
-  } 
-  
+  }
+
   $values_element = $element['#extended'] ? $element['state'] : $element;
   drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], 'saved');
   drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'saved');
-  
-  // Rebuild form because we need to add new values into $element['#value'] into #value_callback
+
+  // Rebuild form because we need to add new values into
+  // $element['#value'] in #value_callback.
   $form_state['rebuild'] = TRUE;
 }
 
-/*
- * Submit function for 'Edit Image' button.
+/**
+ * Submit handler for 'Edit Image' button.
  */
 function jcrop_fapi_jcrop_image_edit_submit($form, &$form_state) {
-  // Get element
+  // Get the element.
   $parents = $form_state['triggering_element']['#array_parents'];
-  array_pop($parents); // remove last element.
-  $element = drupal_array_get_nested_value($form, $parents);    
-  
-  // Change the state of form element.  
+  // Remove last element, the button element.
+  array_pop($parents);
+  $element = drupal_array_get_nested_value($form, $parents);
+
+  // Change the state of form element.
   $values_element = $element['#extended'] ? $element['state'] : $element;
   drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], 'edit');
   drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'edit');
-  
-  // Rebuild the form to add new values into $element['#values'] in #value_callback.
+
+  // Rebuild form to add new values into $element['#values'] in #value_callback.
   $form_state['rebuild'] = TRUE;
 }
 
-/*
- * Submit function for 'Cancel' button.
+/**
+ * Submit handler for 'Cancel' button.
  */
 function jcrop_fapi_jcrop_image_cancel_submit($form, &$form_state) {
-  // Get element
+  // Get the element.
   $parents = $form_state['triggering_element']['#array_parents'];
-  array_pop($parents); // remove last element.
-  $element = drupal_array_get_nested_value($form, $parents);      
-  
-  // Get values of the element from from_state values. 
+  // Remove last element, the button element.
+  array_pop($parents);
+  $element = drupal_array_get_nested_value($form, $parents);
+
+  // Get values of the element from from_state values.
   $element_value = drupal_array_get_nested_value($form_state['values'], $element['#parents']);
-  
+
   if ($element_value['fid'] == $element_value['origin']) {
     // If 'field' equals to 'origin' that means that image hasn't been cropped.
-    // So just delete uploaded image.
-    
+    // So just delete the uploaded image.
+
     // Set state of the element.
     $values_element = $element['#extended'] ? $element['state'] : $element;
     drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], 'default');
-    drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'default');    
-       
+    drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'default');
+
     // Delete uploaded file.
     if ($file = file_load($element_value['fid'])) {
       file_delete($file);
     }
-    
-    // Delete all file ids from form_state
+
+    // Delete all file ids from form_state.
     $values_element = $element['#extended'] ? $element['fid'] : $element;
     drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], NULL);
     drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], NULL);
   }
   else {
-    // Change the state of form element.  
+    // Change the state of form element.
     $values_element = $element['#extended'] ? $element['state'] : $element;
     drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], 'saved');
-    drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'saved'); 
+    drupal_array_set_nested_value($form_state['values'], $values_element['#parents'], 'saved');
   }
-  
-  // Rebuild the form to add new values into $element['#values'] in #value_callback.
+
+  // Rebuild form to add new values into $element['#values'] in #value_callback.
   $form_state['rebuild'] = TRUE;
 }
 
@@ -322,7 +322,7 @@ function jcrop_fapi_libraries_info() {
       'file' => 'js/jquery.Jcrop.js',
       'pattern' => '/jquery.Jcrop.js v(\d+\.+\d+)/',
       'lines' => 5,
-    ),   
+    ),
     'files' => array(
       'js' => array(
         'js/jquery.Jcrop.js',
@@ -352,14 +352,14 @@ function jcrop_fapi_libraries_info() {
           ),
         ),
       ),
-    ),    
+    ),
   );
 
   return $libraries;
 }
 
-/*
- * Implements hook_requirements() 
+/**
+ * Implements hook_requirements().
  */
 function jcrop_fapi_requirements($phase) {
   $requirements = array();
@@ -371,14 +371,14 @@ function jcrop_fapi_requirements($phase) {
   );
 
   $library = libraries_detect('Jcrop');
-  $error_type = isset($library['error']) ? drupal_ucfirst($library['error']) : '';  
-  $error_message = isset($library['error message']) ? $library['error message'] : '';  
+  $error_type = isset($library['error']) ? drupal_ucfirst($library['error']) : '';
+  $error_message = isset($library['error message']) ? $library['error message'] : '';
 
   $library = libraries_detect('jcrop');
   if ($library['installed']) {
-    $requirements['jcrop_fapi']= array(
-      'title' => $t('Jcrop plugin'),      
-      'value' => $library['version'],      
+    $requirements['jcrop_fapi'] = array(
+      'title' => $t('Jcrop plugin'),
+      'value' => $library['version'],
       'severity' => REQUIREMENT_OK,
     );
   }
@@ -388,7 +388,7 @@ function jcrop_fapi_requirements($phase) {
       'value' => $t('@e', array('@e' => $error_type)),
       'severity' => REQUIREMENT_ERROR,
       'description' => $t('!error You need to download the !jcrop, extract the archive and place the \'jcrop\' directory in the %path directory on your server.', array('!error' => $error_message, '!jcrop' => l($t('Jcrop plugin'), $library['download url']), '%path' => 'sites/all/libraries')),
-    );    
+    );
   }
 
   return $requirements;

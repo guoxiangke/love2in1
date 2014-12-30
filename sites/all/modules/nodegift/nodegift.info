@@ -6,11 +6,11 @@ dependencies[] = field
 dependencies[] = image
 package = Userpoints
 core = 7.x
-version 7.x-1.0
+version = 7.x-1.0
 
-; Information added by drupal.org packaging script on 2013-10-01
+; Information added by Drupal.org packaging script on 2014-12-11
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "nodegift"
-datestamp = "1380593410"
+datestamp = "1418281413"
 

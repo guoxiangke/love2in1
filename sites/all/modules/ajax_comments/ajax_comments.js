@@ -5,6 +5,9 @@ Drupal.behaviors.ajaxComments = {
 
     // Responds to submission of new comment by the user.
     if ($(context).hasClass('ajax-comment-wrapper')) {
+      if (typeof(commentNumber) != "undefined") {
+        $('a#reply-' + commentNumber[1]).show();
+      }
       commentNumber = $(context).attr("id").split('-');
       // Scroll to the comment reply inserted by ajax_command.
       ajaxCommentsScrollReply(commentNumber[2])
@@ -26,11 +29,12 @@ Drupal.behaviors.ajaxComments = {
       // Hide comment form.
       $(commentForm).hide();
 
-      ajaxCommentsScrollReply(commentNumber[1])
+      commentNumber = $(this).attr("id").split('-');
+
+      ajaxCommentsScrollReply(commentNumber[3]);
 
       e.preventDefault();
 
-      commentNumber = $(this).attr("id").split('-');
       // This needs to be unbound because the ajax_command callback is still
       // attached to it. We want to show the form that is already hidden
       // instead of calling for a new one.
@@ -38,7 +42,7 @@ Drupal.behaviors.ajaxComments = {
         click: function(e) {
           commentNumber = $(this).attr("id").split('-');
           // Reshow the form.
-          $('[about="/comment/' + commentNumber[1] + '#comment-' + commentNumber[1] + '"]').next().show();
+          $('[about*="/comment/' + commentNumber[1] + '#comment-' + commentNumber[1] + '"]').next().show();
 
           // Don't let people reply over and over.
           $(this).hide();
@@ -57,7 +61,7 @@ Drupal.behaviors.ajaxComments = {
  */
 function ajaxCommentsScrollForm(commentNumber) {
   pos = $('#comment-wrapper-' + commentNumber).offset();
-  height = $('#comment-wrapper-' + commentNumber + ' .comment').attr("scrollHeight");
+  height = propHelper($('#comment-wrapper-' + commentNumber + ' .comment'), "scrollHeight");
 
   // Scroll to comment reply form.
   $('html, body').animate({ scrollTop: pos.top + height}, 'fast');
@@ -67,11 +71,26 @@ function ajaxCommentsScrollForm(commentNumber) {
  * Scrolls user to comment that has been added to page.
  */
 function ajaxCommentsScrollReply(commentNumber) {
-  formSize = $('.comment-form').attr("scrollHeight");
+  formSize = propHelper($('.comment-form'), "scrollHeight");
   pos = $('#comment-wrapper-' + commentNumber).offset();
 
   // Scroll to comment reply.
   $('html, body').animate({ scrollTop: pos.top - formSize}, 'slow');
+}
+
+/**
+ * Helper function to retrieve object properties.
+ *
+ * Works with jquery below and above version 1.6
+ *
+ */
+function propHelper(e, p) {
+	if ($.isFunction($.prop)) {
+		return e.prop(p);
+	}
+	else {
+		return e.attr(p);
+	}
 }
 
 }(jQuery));

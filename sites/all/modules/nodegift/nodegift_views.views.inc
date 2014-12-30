@@ -11,7 +11,6 @@
 */
 function nodegift_views_views_data() {
 	$data = array();
-
 	// ----------------------------------------------------------------------
 	// node_gift table group
 
@@ -24,8 +23,8 @@ function nodegift_views_views_data() {
     'left_field' => 'nid',
     'field' => 'nid'
 	);
-	
-	
+
+
 
 	// ----------------------------------------------------------------------
 	// FIELDS
@@ -43,12 +42,27 @@ function nodegift_views_views_data() {
 	),
 	);
 
+    $data['node_gift']['gift_id'] = array(
+        'title' => t('Gift id'),
+        'help' => t('The id if a gift.'),
+        'field' => array(
+            'handler' => 'views_handler_field_numeric'
+        ),
+        'filter' => array(
+            'title' => t('Nodegift gift id'),
+            'handler' => 'views_handler_filter_numeric',
+        ),
+        'argument' => array(
+            'handler' => 'views_handler_argument_numeric',
+        )
+    );
+
 	$data['node_gift']['comment'] = array(
 	'title' => t('Gift comment'),
 	'help' => t('The comment left the user to a gift.'),
 	'field' => array(
 	'handler' => 'views_handler_field_markup',
-	'format' => 'filtered_html',
+	'format' => 'plain_text',
 	)
 	);
 
@@ -72,18 +86,18 @@ function nodegift_views_views_data() {
 	$data['node_gift']['sid'] = array(
 	'title' => t('Sender'),
 	'help' => t("The user which has sent a gift."),
-	
+
 	'relationship' => array(
 	'base' => 'users',
 	'field' => 'sid',
 	'handler' => 'views_handler_relationship',
 	'label' => t('The user which has send a gift.'),
 	),
-	
+
 	'filter' => array(
 	'title' => t('Nodegift sender Name'),
 	'handler' => 'views_handler_filter_user_name'),
-	
+
 	'argument' => array(
 	'handler' => 'views_handler_argument_user_uid',
 	),
@@ -98,7 +112,7 @@ function nodegift_views_views_data() {
     'handler' => 'views_handler_relationship',
     'label' => t('The user which has received a gift.'),
 	),
-	
+
 	'filter' => array(
     'title' => t('Nodegift receiver Name'),
     'handler' => 'views_handler_filter_user_name',

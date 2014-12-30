@@ -27,7 +27,7 @@ function nodegift_install()
     // In this case, we set base equal to 'node_content' so Drupal will handle
     // our node as if we had designed it in the UI.
     'base' => 'node_content',
-    'description' => $t('This is the gift node created by Nodegift module.'),
+    'description' => $t('Use <em>gifts</em> when you need to create virtual gifts.'),
     'title_label' => $t('Title'),
 	'custom' => TRUE,
   );

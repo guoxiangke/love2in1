@@ -5,7 +5,6 @@ function nodegift_delete_confirm_form($form, &$form_state, $gift_id = NULL, $acc
   if (!$gift_id) return;
 
   $nid = db_query("SELECT nid from {node_gift} where gift_id = :gift_id", array(':gift_id' => (int) $gift_id))->fetchField();
-  print $nid;
   $node = node_load($nid);
   if (!$node) {
     drupal_goto('user/' .$account_id. '/gifts');
@@ -19,7 +18,7 @@ function nodegift_delete_confirm_form($form, &$form_state, $gift_id = NULL, $acc
   $message = t('Are you sure you want to remove gift <em>@gift</em> from your gifts?', array('@gift' => check_plain($node->title)));
   $caption = '<p>' . t('This action cannot be undone.') . '</p>';
 
-  return confirm_form($form, $message, 'user/' . $account_id . '/gifts', $caption, t('Delete')); 
+  return confirm_form($form, $message, 'user/' . $account_id . '/gifts', $caption, t('Delete'));
 }
 
 function nodegift_delete_confirm_form_submit($form, &$form_state)

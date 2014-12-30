@@ -2,30 +2,6 @@
 
 
 /**
- * Implementation of hook_help
- */
-function nodegift_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#nodegift':
-      return '<h3>' . t('About') . '</h3>' . '<p>' . t("Nodegift module allows to 'buy' nodes when user have anough amount of Userpoints") . '<p>';
-    case 'admin/help#nodegift_settings':
-      return '<h3>' . t('Settings') . '</h3>' . '<p>' . t("Settings //////.... ") . '<p>';
-  }
-}
-
-
-/**
- * Implementation of hook_init().
- */
-function nodegift_init() {
-  if (strpos($_GET['q'], 'admin/structure/types/manage') !== FALSE) {
-  }
-}
-
-/**
-TODO save settings on per node type basis
-
-/**
  * Implementation of hook_permission().
  */
 function nodegift_permission() {
@@ -60,7 +36,7 @@ function nodegift_menu() {
 	);
 
   $items['user/%user/gifts'] = array(
-    'title' => 'Gifts',
+    'title' => t('Gifts'),
     'page callback' => 'nodegift_gifts',
     'page arguments' => array(1),
     'access callback' => 'user_view_access',
@@ -77,6 +53,7 @@ function nodegift_menu() {
   );
 	return $items;
 }
+
 
 /**
  * Implement hook_form_FORM_ID_alter().
@@ -105,7 +82,7 @@ function nodegift_form_node_type_form_alter(&$form, &$form_state) {
     '#title' => t('Node Gift'),
     '#collapsible' => TRUE,
     '#group' => 'additional_settings',
-    '#description' => t('Specify if this content type can be threated as gift (Node Gift).' . l("Documentation", 'admin/help', array('fragment' => 'nodegift_settings'))),
+    '#description' => t('Specify if this content type can be used as gift (Node Gift).' . l("Documentation", 'admin/help', array('fragment' => 'nodegift_settings'))),
     // TODO add js back '#attached'=> array('js' => array($js)),
   );
 
@@ -120,7 +97,7 @@ function nodegift_form_node_type_form_alter(&$form, &$form_state) {
 
   $form['nodegift']['ng_type'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Node gift'),
+    '#title' => t('NodeGift type'),
     '#default_value' => nodegift_is_gift_type($node_type),
     '#description' => t('If checked, this content type will be used as gift node'),
   );
@@ -136,16 +113,16 @@ function nodegift_form_node_type_form_alter(&$form, &$form_state) {
     '#title' => t('Choose a content field for gift price'),
     '#options' => $options_numbers,
     '#default_value' => (isset($form_state['values']['ng_price']) ? $form_state['values']['ng_price'] : $settings['ng_price']),
-    '#description' => t('This field will be used to display Buy button depends on user\'s userpoints count and defined number in this field'),
+    '#description' => t('This field will be used as virtual price for nodes.'),
   );
 
   $form['nodegift']['ng_image'] = array(
     '#type' => 'select',
-    '#title' => t('Choose an image field for gift price'),
+    '#title' => t('Choose an image field for gift image'),
     '#options' => $options_images,
     '#default_value' => (isset($form_state['values']['ng_image']) ? $form_state['values']['ng_image'] :
                                   (isset($settings['ng_image']) ? $settings['ng_image'] : '')),
-    '#description' => t('This field will be used to display gift image.'),
+    '#description' => t('This field will be used to display gift images on user\'s gift page or on buy gift pages.'),
   );
 
   $options_styles = array();
@@ -160,7 +137,7 @@ function nodegift_form_node_type_form_alter(&$form, &$form_state) {
       '#options' => $options_styles,
       '#default_value' => (isset($form_state['values']['ng_image_style']) ? $form_state['values']['ng_image_style'] :
                                     (isset($settings['ng_image_style']) ? $settings['ng_image_style'] : '')),
-      '#description' => t('This field will be used to display gift image in a given style'),
+      '#description' => t('Choosed image style will be used to display gift image on user\'s gifts page and on buy gift pages'),
     );
   }
   $form['nodegift']['ng_userpoints_category'] = array(
@@ -172,7 +149,25 @@ function nodegift_form_node_type_form_alter(&$form, &$form_state) {
     '#description' => t('User will be able to buy gifts of this content type only if he have points of choosed category'),
     '#required' => false,
   );
-  $form['#submit'][] = 'nodegift_node_type_form_submit';
+
+    $formats = filter_formats();
+    $options_formats = array();
+    foreach ($formats as $format) {
+        $options_formats[$format->format] = $format->name;
+    }
+
+    if (count($options_formats)) {
+        $form['nodegift']['ng_comment_format'] = array(
+            '#type' => 'select',
+            '#title' => t('Choose format for gift comment'),
+            '#options' => $options_formats,
+            '#default_value' => (isset($form_state['values']['ng_comment_format']) ? $form_state['values']['ng_comment_format'] :
+                (isset($settings['ng_comment_format']) ? $settings['ng_comment_format'] : '')),
+            '#description' => t('Choosed format will be used to display comment on user gifts page as well as in views'),
+        );
+    }
+
+    $form['#submit'][] = 'nodegift_node_type_form_submit';
 
 }
 
@@ -181,6 +176,7 @@ function nodegift_node_type_form_submit($form, &$form_state) {
     $settings['ng_price'] = $form_state['values']['ng_price'];
     $settings['ng_image'] = $form_state['values']['ng_image'];
     $settings['ng_image_style'] = $form_state['values']['ng_image_style'];
+    $settings['ng_comment_format'] = $form_state['values']['ng_comment_format'];
     $settings['ng_userpoints_category'] = $form_state['values']['ng_userpoints_category'];
     nodegift_save_settings($form['#node_type']->type, $settings);
   }
@@ -193,20 +189,21 @@ function nodegift_node_view($node, $view_mode, $langcode) {
 	global $user;
 
 	$the_settings = nodegift_get_settings($node->type);
-	
+
 	if (nodegift_is_gift_type($node->type)) {
 
 		$field_gift_price = $the_settings['ng_price'];
-    $node_price = field_get_items('node', $node, $field_gift_price);                                                         
+    $node_price = field_get_items('node', $node, $field_gift_price);
     $node_price = $node_price[0]['value'];
 
-		if ($view_mode == 'teaser' || arg(1) == 'buy' || $user->uid == 0 || !user_access('access node gift') 
+		if ($view_mode == 'teaser' || arg(1) == 'buy' || $user->uid == 0 || !user_access('access node gift')
         || userpoints_get_current_points($user->uid, $the_settings['ng_userpoints_category']) < $node_price) {
 			return;
 		}
 		// Add our button form as a content item.
+        $nodeForm = drupal_get_form('nodegift_button_form', $node);
 		$node->content['nodegift_button_form'] = array(
-		'#markup' => drupal_render(drupal_get_form('nodegift_button_form', $node)),
+		'#markup' => drupal_render($nodeForm),
 		'#weight' => 50
 		);
 	}
@@ -227,15 +224,15 @@ function nodegift_user_view($account, $view_mode, $langcode) {
       break;
     }
   }
-	
+
 	if ($nodegift_enabled) {
 		if ($view_mode == 'teaser' || arg(1) == 'buy' || $user->uid == 0 || !user_access('access node gift') || userpoints_get_current_points($user->uid) < 1) {
 			return;
 		}
 		// Add our button form as a content item.
-    $form = drupal_get_form('nodegift_user_button_form', $account);
+        $giftForm = drupal_get_form('nodegift_user_button_form', $account);
 		$account->content['nodegift_button_form'] = array(
-		  '#markup' => drupal_render($form),
+		  '#markup' => drupal_render($giftForm),
 		  '#weight' => 50
 		);
 	}
@@ -261,7 +258,7 @@ function nodegift_button_form($form_state, $node) {
  * Node gift button form submit
  */
 function nodegift_button_form_submit($form, &$form_state) {
-	$form_state['redirect'] = 'nodegift/buy/' . $form_state['values']['gift_nid'];	
+	$form_state['redirect'] = 'nodegift/buy/' . $form_state['values']['gift_nid'];
 }
 
 /**
@@ -281,7 +278,7 @@ function nodegift_user_button_form($form_state, $account) {
 }
 
 function nodegift_user_button_form_submit($form, &$form_state) {
-	$form_state['redirect'] = 'nodegift/gift_select/' . $form_state['values']['account_uid'];	
+	$form_state['redirect'] = 'nodegift/gift_select/' . $form_state['values']['account_uid'];
 }
 
 function nodegift_gift_select($uid) {
@@ -301,9 +298,10 @@ function nodegift_gift_select($uid) {
     if ($field_gift_image && $field_gift_image_style) {
       $field_to_render = field_view_field('node', $node, $field_gift_image, array(
           'type' => 'image',
+          'label' => 'hidden',
           'settings' => array('image_style' =>  $field_gift_image_style),
       ));
-      $rows[0][] = array('data' => '<a href="'. url("/nodegift/buy/$nid"). '/user/' . $uid . '">'. render($field_to_render). '</a>');
+      $rows[0][] = array('data' => '<a href="'. url("nodegift/buy/$nid"). '/user/' . $uid . '">'. render($field_to_render). '</a>');
     }
   }
   $form['gift'] = array(
@@ -336,8 +334,8 @@ function nodegift_buy_form() {
   $field_gift_image = (isset($the_settings['ng_image'])) ? $the_settings['ng_image'] : FALSE;
   $field_gift_image_style = (isset($the_settings['ng_image_style'])) ? $the_settings['ng_image_style'] : FALSE;
 
-  $node_price = field_get_items('node', $node, $field_gift_price);                                                         
-  $node_price = $node_price[0]['value'];                                                                                   
+  $node_price = field_get_items('node', $node, $field_gift_price);
+  $node_price = $node_price[0]['value'];
 
   if ($user->uid == 0 || !user_access('access node gift')) {
     form_set_error('receiver', t('You are not allowed to buy gift(s)'));
@@ -363,7 +361,7 @@ function nodegift_buy_form() {
     $receiver = user_load((int) $rid);
     $form['receiver']['#default_value'] = $receiver->name;
   }
-  
+
 	$form['price_info'] = array(
 	'#type' => 'item',
 	'#title' => t('Totals: '),
@@ -383,7 +381,7 @@ function nodegift_buy_form() {
     '#title' => t('Your gift(s)'),
     '#markup' => theme('table', array('rows' => $rows)),
   );
-	
+
 	$form['comment'] = array(
 	'#type' => 'textarea',
 	'#title' => t('Additional comment'),
@@ -425,13 +423,13 @@ function nodegift_buy_form_validate($form, &$form_state) {
 		form_set_error('receiver', t('User %name does not exist', array('%name' => $user_name)));
 	}
 
-  $node_price = field_get_items('node', $node, $field_gift_price);                                                         
-  $node_price = $node_price[0]['value'];                                                                                   
+  $node_price = field_get_items('node', $node, $field_gift_price);
+  $node_price = $node_price[0]['value'];
 
   if (!nodegift_is_gift_type($node->type)) {
     drupal_set_message(t('This operation is not allowed for node type @node-type', array('@node-type' => $node->type)), 'error');
     return;
-  }    
+  }
 
   if ($user->uid == 0 || !user_access('access node gift')) {
     form_set_error('receiver', t('You are not allowed to buy gift(s)'));
@@ -449,33 +447,37 @@ function nodegift_buy_form_submit($form, &$form_state) {
 	global $user;
 
   $nid = $form_state['values']['gift_nid'];
-  $node = node_load($nid);
-
-	$the_settings = nodegift_get_settings($node->type);
-
 	$rid = db_query("SELECT uid FROM {users} WHERE name = :name ", array(':name' => $form_state['values']['receiver']))->fetchField();
 	$comment = $form_state['values']['comment'];
+  // TODO check how it works
+  nodegift_send($nid, $user->uid, $rid, $comment);
+	drupal_set_message(t('Your gift(s) has been sent to user: @user-name', array('@user-name' => $form_state['values']['receiver'])), 'info');
+	drupal_goto('user/' . $rid . '/gifts');
+}
 
-  $field_gift_price = $the_settings['ng_price'];
 
-  $node_price = field_get_items('node', $node, $field_gift_price);                                                         
-  $node_price = $node_price[0]['value'];                                                                                   
+function nodegift_send($nid, $sid, $rid, $comment) {
 
-  $fields = array('nid' => $nid, 'sid' => $user->uid, 'rid' => $rid, 'comment' => $comment, 'time_stamp' => time());
+  $node = node_load($nid);
+  $the_settings = nodegift_get_settings($node->type);
+
+  $node_price = field_get_items('node', $node, $the_settings['ng_price']);
+  $node_price = $node_price[0]['value'];
+
+  $fields = array('nid' => $nid, 'sid' => $sid, 'rid' => $rid, 'comment' => $comment, 'time_stamp' => time());
   db_insert("{node_gift}")->fields($fields)->execute();
   cache_clear_all();
 
 	userpoints_userpointsapi(array('points' => (int) -$node_price, 'tid' => $the_settings['ng_userpoints_category']));
 
-	drupal_set_message(t('Your gift(s) has been sent to user: @user-name', array('@user-name' => $form_state['values']['receiver'])), 'info');
 
-	drupal_goto('user/' . $rid . '/gifts');
 }
 
 function nodegift_gifts($account) {
   global $user;
 
   $header = array(t('Gift'), t('Comment'), t('Sender'));
+  drupal_set_title(t("@name's gifts", array('@name' => format_username($account))));
   if (nodegift_can_remove($account->uid)) {
     array_push($header, t('Operation'));
   }
@@ -490,17 +492,19 @@ function nodegift_gifts($account) {
     if ($the_settings = nodegift_get_settings($node->type)) {
       $field_gift_image = $the_settings['ng_image'];
       $field_gift_image_style = $the_settings['ng_image_style'];
+      $comment_format = (isset($the_settings['ng_comment_format'])) ? $the_settings['ng_comment_format'] : 'plain_text';
     }
 
     if ($field_gift_image && $field_gift_image_style) {
       $field_to_render = field_view_field('node', $node, $field_gift_image, array(
           'type' => 'image',
+          'label' => 'hidden',
           'settings' => array('image_style' =>  $field_gift_image_style, 'image_link' => 'content'),
       ));
-      $rows[$counter] = array(array('data' => render($field_to_render)), array('data' => check_markup($result->comment, 'filtered_html')), array('data' => theme('username', array('account' => $sender))));
+      $rows[$counter] = array(array('data' => render($field_to_render)), array('data' => check_markup($result->comment, $comment_format)), array('data' => theme('username', array('account' => $sender))));
     }
     else {
-      $rows[$counter] = array(array('data' => node_view($node, 'teaser')), array('data' => check_markup($result->comment, 'filtered_html')), array('data' => theme('username', array('account' => $sender))));
+      $rows[$counter] = array(array('data' => node_view($node, 'teaser')), array('data' => check_markup($result->comment, $comment_format)), array('data' => theme('username', array('account' => $sender))));
     }
     if (nodegift_can_remove($account->uid)) {
       array_push($rows[$counter], array('data' => l(t('Remove'), 'user/'.$account->uid.'/gift/'. $result->gift_id .'/remove/')));
@@ -527,7 +531,7 @@ function nodegift_get_settings($content_type = NULL, $flush = false) {
       }
     }
   }
-  if ($content_type && isset($settings[$content_type])) return $settings[$content_type]; 
+  if ($content_type && isset($settings[$content_type])) return $settings[$content_type];
   if (!$content_type && count($settings)) return $settings;
 
   return false;

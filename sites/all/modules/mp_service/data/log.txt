@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>微信公众平台</title>
+<script type="text/javascript">
+    var mp = {time:{begin:(+new Date())}};
+    var page_all_dom_load_id = 23521, page_all_dom_load_key = 9;
+    var page_all_onload_id = 23521, page_all_onload_key = 10;
+    var page_all_js_script_id = 23521, page_all_js_script_key = 11;
+    var page_all_ava_id = 23521, page_all_ava_key = 12;
+
+    var report_ports = [];
+    wx_save_report = function(id, key, time){
+        report_ports.push(id + "_" + key + "=" + time);    
+    };
+    wx_report = function(){
+        if (report_ports.length == 8){
+            if (Math.random() < 1){//采样
+                var _img = new Image(1, 1);
+                _img.src = "/misc/jsreport?type=avg&r=" + Math.random() + "&" + report_ports.join("&") + "&" 
+                        + page_dom_load_id  + "_" + page_dom_load_key  + "|"
+                        + page_js_script_id + "_" + page_js_script_key + "|"
+                        + page_ava_id       + "_" + page_ava_key       + "="
+                        + (script_begin-mp.time.domLoaded);
+            }
+        }
+    };
+    wx_main = function(mod){
+        var script_end = (+(new Date()));
+        console.log('Script Exec Time : %s ms'.sprintf(script_end - script_begin));
+        if (
+                typeof page_js_script_id != "undefined" && typeof page_js_script_key != "undefined"
+                && typeof page_ava_id != "undefined" && typeof page_ava_key != "undefined"
+            ){
+            wx_save_report(page_js_script_id, page_js_script_key, script_end - script_begin);
+            wx_save_report(page_all_js_script_id, page_all_js_script_key, script_end - script_begin);
+            wx_save_report(page_ava_id, page_ava_key, script_end - mp.time.begin);
+            wx_save_report(page_all_ava_id, page_all_ava_key, script_end - mp.time.begin);
+            wx_report();
+        }
+    };
+</script>
+<link href="https://res.wx.qq.com/mpres/htmledition/images/favicon1e5b3a.ico" rel="Shortcut Icon">
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/layout_head1f56cd.css"/>
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/base1f359b.css"/>
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/lib1ec5f7.css"/>
+
+        <link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/page/page_error1ec663.css"/>
+		
+    </head>
+    <body class="zh_CN">
+    	<div class="head" id="header">
+			<div class="head_box">
+    <div class="inner wrp">
+        <h1 class="logo"><a href="/" title="微信公众平台"></a></h1>
+        <div class="account">
+                        <div class="account_meta account_faq" style="display:none;"><a class="account_primary_link" href="http://crm2.qq.com/page/portalpage/wpa.php?uin=40012345&f=1&ty=1&ap=000011:400792:|m:12|f:400792:m:12" target="_blank">在线客服</a></div>
+                    </div>
+    </div>
+</div>
+
+		</div>
+        <div id="body" class="body page_error page_500">
+            <div class="container_box">
+                <div class="page_error_msg">
+                    <div class="inner">
+                        <span class="icon_wrp">
+                            <i class="icon_page_error"></i>
+                        </span>
+                        <div class="msg_content">
+                            
+        <h2>发生错误，请点击<a href='/'>返回首页</a></h2>
+	
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="foot" id="footer">
+	<ul class="links ft">
+					<li class="links_item no_extra"><a href="http://www.tencent.com/zh-cn/index.shtml" target="_blank">关于腾讯</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=home/agreement_tmpl&type=info&lang=zh_CN&token=" target="_blank">服务协议</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=business/faq_operation_tmpl&type=info&lang=zh_CN&token=" target="_blank">运营规范</a></li>
+			<li class="links_item"><a href="http://kf.qq.com/product/weixinmp.html" target="_blank">客服中心</a></li>
+			<li class="links_item"><a href="http://crm2.qq.com/page/portalpage/wpa.php?uin=40012345&f=1&ty=1&ap=000011:400792:|m:12|f:400792:m:12" target="_blank">在线客服</a></li>
+			<li class="links_item"><a href="mailto:weixinmp@qq.com" target="_blank">联系邮箱</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=home/infringement_tmpl&lang=zh_CN" target="_blank">侵权投诉</a></li>
+
+				<li class="links_item"><p class="copyright">Copyright &copy; 2012-2014 Tencent. All Rights Reserved.</p> </li>
+	</ul>
+    
+	
+</div>
+
+        <script>
+            mp.time.domLoaded = (+new Date());
+        </script>
+        <script>
+                var script_begin = (+(new Date()));
+        </script>
+	</body>
+
+</html>
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>微信公众平台</title>
+<script type="text/javascript">
+    var mp = {time:{begin:(+new Date())}};
+    var page_all_dom_load_id = 23521, page_all_dom_load_key = 9;
+    var page_all_onload_id = 23521, page_all_onload_key = 10;
+    var page_all_js_script_id = 23521, page_all_js_script_key = 11;
+    var page_all_ava_id = 23521, page_all_ava_key = 12;
+
+    var report_ports = [];
+    wx_save_report = function(id, key, time){
+        report_ports.push(id + "_" + key + "=" + time);    
+    };
+    wx_report = function(){
+        if (report_ports.length == 8){
+            if (Math.random() < 1){//采样
+                var _img = new Image(1, 1);
+                _img.src = "/misc/jsreport?type=avg&r=" + Math.random() + "&" + report_ports.join("&") + "&" 
+                        + page_dom_load_id  + "_" + page_dom_load_key  + "|"
+                        + page_js_script_id + "_" + page_js_script_key + "|"
+                        + page_ava_id       + "_" + page_ava_key       + "="
+                        + (script_begin-mp.time.domLoaded);
+            }
+        }
+    };
+    wx_main = function(mod){
+        var script_end = (+(new Date()));
+        console.log('Script Exec Time : %s ms'.sprintf(script_end - script_begin));
+        if (
+                typeof page_js_script_id != "undefined" && typeof page_js_script_key != "undefined"
+                && typeof page_ava_id != "undefined" && typeof page_ava_key != "undefined"
+            ){
+            wx_save_report(page_js_script_id, page_js_script_key, script_end - script_begin);
+            wx_save_report(page_all_js_script_id, page_all_js_script_key, script_end - script_begin);
+            wx_save_report(page_ava_id, page_ava_key, script_end - mp.time.begin);
+            wx_save_report(page_all_ava_id, page_all_ava_key, script_end - mp.time.begin);
+            wx_report();
+        }
+    };
+</script>
+<link href="https://res.wx.qq.com/mpres/htmledition/images/favicon1e5b3a.ico" rel="Shortcut Icon">
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/layout_head1f56cd.css"/>
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/base1f359b.css"/>
+<link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/base/lib1ec5f7.css"/>
+
+        <link rel="stylesheet" type="text/css" href="https://res.wx.qq.com/mpres/htmledition/style/page/page_error1ec663.css"/>
+		
+    </head>
+    <body class="zh_CN">
+    	<div class="head" id="header">
+			<div class="head_box">
+    <div class="inner wrp">
+        <h1 class="logo"><a href="/" title="微信公众平台"></a></h1>
+        <div class="account">
+                        <div class="account_meta account_faq" style="display:none;"><a class="account_primary_link" href="http://crm2.qq.com/page/portalpage/wpa.php?uin=40012345&f=1&ty=1&ap=000011:400792:|m:12|f:400792:m:12" target="_blank">在线客服</a></div>
+                    </div>
+    </div>
+</div>
+
+		</div>
+        <div id="body" class="body page_error page_500">
+            <div class="container_box">
+                <div class="page_error_msg">
+                    <div class="inner">
+                        <span class="icon_wrp">
+                            <i class="icon_page_error"></i>
+                        </span>
+                        <div class="msg_content">
+                            
+        <h2>发生错误，请点击<a href='/'>返回首页</a></h2>
+	
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="foot" id="footer">
+	<ul class="links ft">
+					<li class="links_item no_extra"><a href="http://www.tencent.com/zh-cn/index.shtml" target="_blank">关于腾讯</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=home/agreement_tmpl&type=info&lang=zh_CN&token=" target="_blank">服务协议</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=business/faq_operation_tmpl&type=info&lang=zh_CN&token=" target="_blank">运营规范</a></li>
+			<li class="links_item"><a href="http://kf.qq.com/product/weixinmp.html" target="_blank">客服中心</a></li>
+			<li class="links_item"><a href="http://crm2.qq.com/page/portalpage/wpa.php?uin=40012345&f=1&ty=1&ap=000011:400792:|m:12|f:400792:m:12" target="_blank">在线客服</a></li>
+			<li class="links_item"><a href="mailto:weixinmp@qq.com" target="_blank">联系邮箱</a></li>
+			<li class="links_item"><a href="/cgi-bin/readtemplate?t=home/infringement_tmpl&lang=zh_CN" target="_blank">侵权投诉</a></li>
+
+				<li class="links_item"><p class="copyright">Copyright &copy; 2012-2014 Tencent. All Rights Reserved.</p> </li>
+	</ul>
+    
+	
+</div>
+
+        <script>
+            mp.time.domLoaded = (+new Date());
+        </script>
+        <script>
+                var script_begin = (+(new Date()));
+        </script>
+	</body>
+
+</html>
+
+

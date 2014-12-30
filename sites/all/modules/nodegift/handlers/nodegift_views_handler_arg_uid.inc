@@ -7,7 +7,7 @@
 
 
 class nodegift_views_handler_arg_uid extends views_handler_argument_user_uid {
- 
+
   function query() {
     $this->ensure_my_table();
 
@@ -15,9 +15,8 @@ class nodegift_views_handler_arg_uid extends views_handler_argument_user_uid {
       views_break_phrase($this->argument, $this);
     }
     else {
-      $this->value = array($this->argument);
+        $this->value = array($this->argument);
     }
-echo '<pre>'; print_r($this); echo '</pre>';
 
     if (count($this->value) > 1) {
       $operator = empty($this->options['not']) ? 'IN' : 'NOT IN';
