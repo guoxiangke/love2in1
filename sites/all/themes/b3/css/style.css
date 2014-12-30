@@ -294,6 +294,9 @@ h1, .h1 {
 .user-signature,.new {
 	display: none;
 }
-#edit-comment-body-und-0-format{
+#edit-comment-body-und-0-format,#edit-body-und-0-format{
+	display: none;
+}
+#og-group-ref-add-more-wrapper {
 	display: none;
 }
